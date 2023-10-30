@@ -1,0 +1,4294 @@
+@function gtkalpha($c,$a) {
+  @return unquote("alpha(#{$c},#{$a})");
+}
+
+$ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$backdrop_transition: 200ms ease-out;
+$button_transition: all 200ms $ease-out-quad, outline-width 0s;
+$header_radius: 4px;
+$scale_trough_bg: if($variant != 'dark', $button_border, darken($bg_color, 5%));
+
+$asset_suffix: if($variant=='dark', '-dark', '');
+$darker_asset_suffix: if($variant=='darker', '-dark', $asset_suffix);
+
+/***************
+ * Base States *
+ ***************/
+.background {
+  color: $fg_color;
+  background-color: if($transparency == 'true', transparentize($bg_color, 0.001), $bg_color); // without this headerbar transparency doesn't seem to work
+}
+
+dnd {
+  color: $fg_color;
+}
+
+.normal-icons {
+  -gtk-icon-size: 16px;
+}
+
+.large-icons {
+  -gtk-icon-size: 32px;
+}
+
+image:disabled {
+  -gtk-icon-filter: opacity(0.5);
+}
+
+.view,
+%view {
+  color: $text_color;
+  background-color: $base_color;
+
+  &:disabled {
+    color: $insensitive_fg_color;
+    background-color: $insensitive_bg_color;
+  }
+
+  &:selected {
+    &:focus, & {
+      @extend %selected_items;
+
+      border-radius: 2px;
+    }
+  }
+}
+
+textview {
+  > text {
+    @extend %view;
+
+    background-color: transparent;
+
+    > selection { &:focus, & { @extend %selected_items; }}
+  }
+
+  &:drop(active) {
+    caret-color: $drop_target_color;
+  }
+}
+
+textview > border { background-color: mix($bg_color, $base_color, 50%); }
+
+iconview {
+  @extend .view;
+
+  @include focus-ring();
+
+  &:drop(active) {
+    box-shadow: none;
+  }
+
+  > dndtarget:drop(active) {
+    border-style: solid;
+    border-width: 1px;
+    border-color: $selected_borders_color;
+  }
+}
+
+rubberband {
+  border: 1px solid darken($selected_bg_color, 10%);
+  background-color: transparentize(darken($selected_bg_color, 10%), 0.8);
+}
+
+flowbox {
+  > rubberband { @extend rubberband; }
+
+  > flowboxchild {
+    padding: 3px;
+    border-radius: 2px;
+
+    @include focus-ring();
+
+    &:selected {
+      @extend %selected_items;
+    }
+  }
+}
+
+gridview {
+  > rubberband { @extend rubberband; }
+
+  > child {
+    padding: 3px;
+    border-radius: 2px;
+
+    @include focus-ring();
+
+    &:selected {
+      @extend %selected_items;
+    }
+
+    box { //cells
+      border-spacing: 8px; //label separation
+      margin: 12px;
+    }
+  }
+}
+
+coverflow cover {
+  color: $text_color;
+  background-color: $base_color;
+  border: 1px solid black;
+}
+
+label {
+  @include focus-ring();
+
+  &.separator {
+    @extend .dim-label;
+
+    color: $fg_color;
+  }
+
+  &:selected { @extend %nobg_selected_items; }
+
+  > selection {
+    background-color: $selected_bg_color;
+    color: $selected_fg_color;
+  }
+
+  &:disabled {
+    color: $insensitive_fg_color;
+
+    button & { color: inherit; }
+
+    > selection { @extend %selected_items_disabled; }
+  }
+
+  &.error {
+   color: $error_color;
+   &:disabled { color: transparentize($error_color,0.5); }
+  }
+}
+
+.dim-label {
+  opacity: 0.55;
+  text-shadow: none;
+}
+
+window.assistant {
+  .sidebar {
+    border-top: 1px solid $borders_color;
+  }
+
+  &.csd .sidebar { border-top-style: none; }
+
+  .sidebar > label { padding: 6px 12px; }
+
+  .sidebar > label.highlight {
+    color: $selected_fg_color;
+    background-color: $selected_bg_color;
+  }
+}
+
+window.aboutdialog image.large-icons {
+  -gtk-icon-size: 128px;
+}
+
+%osd,
+.osd {
+  color: $osd_fg_color;
+  border: none;
+  background-color: $osd_bg_color;
+  background-clip: padding-box;
+  text-shadow: none;
+  -gtk-icon-shadow: none;
+}
+
+/*********************
+ * Spinner Animation *
+ *********************/
+@keyframes spin {
+  to { transform: rotate(1turn); }
+}
+
+spinner {
+  background: none;
+  opacity: 0; // non spinning spinner makes no sense
+  -gtk-icon-source: -gtk-icontheme('process-working-symbolic');
+
+  &:checked {
+    opacity: 1;
+    animation: spin 1s linear infinite;
+
+    &:disabled { opacity: 0.5; }
+  }
+}
+
+/**********************
+ * General Typography *
+ **********************/
+.large-title {
+   font-weight: 300;
+   font-size: 24pt;
+}
+.title-1 {
+   font-weight: 800;
+   font-size: 20pt;
+}
+.title-2 {
+   font-weight: 800;
+   font-size: 15pt;
+}
+.title-3 {
+   font-weight: 700;
+   font-size: 15pt;
+}
+.title-4 {
+   font-weight: 700;
+   font-size: 13pt;
+}
+.heading {
+   font-weight: 700;
+   font-size: 11pt;
+}
+.body {
+   font-weight: 400;
+   font-size: 11pt;
+}
+.caption-heading {
+   font-weight: 700;
+   font-size: 9pt;
+}
+.caption {
+   font-weight: 400;
+   font-size: 9pt;
+}
+
+/****************
+ * Text Entries *
+ ****************/
+
+%entry,
+entry {
+  %entry_basic, & {
+    min-height: 26px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border: 1px solid;
+    border-radius: 3px;
+    border-spacing: 5px;
+    transition: all 200ms $ease-out-quad;
+    background-clip: padding-box;
+
+    &.search { border-radius: 20px; }
+
+    @include entry(normal);
+
+    > image { // icons inside the entry
+      &.left { margin-right: 5px; }
+      &.right { margin-left: 5px; }
+    }
+
+    > text > placeholder {
+      @extend .dim-label;
+    }
+
+    > text > block-cursor {
+      @include entry(block_cursor);
+    }
+
+    &.flat {
+      &:focus-within, &:disabled, & {
+        min-height: 0;
+        padding: 2px;
+        background-color: transparent;
+        border-color: transparent;
+        border-radius: 0;
+      }
+    }
+
+    &:focus-within {
+      background-clip: border-box;
+      @include entry(focus);
+      > placeholder {
+        opacity: 0; /* We hide placeholders on focus */
+      }
+    }
+
+    &:disabled { @include entry(insensitive); }
+
+    > text > selection { @extend %selected_items; }
+
+    // entry error and warning style
+    @each $e_type, $e_color, $e_fg_color in (error, $error_color, $error_fg_color),
+                                            (warning, $warning_color, $warning_fg_color) {
+      &.#{$e_type} {
+        color: $e_fg_color;
+        border-color: if($variant!='dark', $e_color, $entry_border);
+        background-color: mix($e_color, $base_color, 60%);
+
+        > image { color: $e_fg_color; }
+
+        &:focus-within {
+          color: $e_fg_color;
+          background-color: $e_color;
+          box-shadow: none;
+        }
+
+        > selection {
+          background-color: $e_fg_color;
+          color: $e_color;
+        }
+      }
+    }
+
+    > image { // entry icons colors
+      color: mix($fg_color, $base_color, 80%);
+    }
+
+    &.password image.caps-lock-indicator {
+      color: mix($fg_color, $base_color, 80%);
+    }
+
+    &:drop(active) {
+      &:focus-within, & {
+        border-color: $drop_target_color;
+        box-shadow: none;
+      }
+    }
+
+    .osd & {
+      @include entry(osd);
+
+      &:focus-within { @include entry(osd-focus); }
+
+      &:disabled { @include entry(osd-insensitive); }
+
+      selection {
+        color: $selected_bg_color;
+        background-color: $selected_fg_color;
+      }
+    }
+  }
+
+  > progress {
+    margin-bottom: 2px;
+  }
+
+  progress > trough > progress {
+    background-color: transparent;
+    background-image: none;
+    border-radius: 0;
+    border-width: 0 0 2px;
+    border-color: $selected_bg_color;
+    border-style: solid;
+    box-shadow: none;
+
+  }
+
+  // linked entries
+  .linked:not(.vertical) > & { @extend %linked; }
+
+  // Vertically linked entries
+  .linked.vertical > & { @extend %linked_vertical; }
+
+  &.error { color: $error_color; }
+}
+
+treeview entry {
+  &:focus-within {
+    &:dir(rtl), &:dir(ltr) { // specificity bump hack
+      background-color: $base_color;
+    }
+  }
+
+  &.flat, & {
+    border-radius: 0;
+    background-image: none;
+    background-color: $base_color;
+
+    &:focus-within { border-color: $selected_bg_color; }
+  }
+}
+
+/*******************
+ * Editable Labels *
+ *******************/
+editablelabel > stack > text {
+  @include entry(normal);
+}
+
+/***********
+ * Buttons *
+ ***********/
+// stuff for .needs-attention
+$_dot_color: $selected_bg_color;
+@keyframes needs_attention {
+  from { background-image: radial-gradient(farthest-side, $_dot_color 0%, transparentize($_dot_color, 1) 0%); }
+  to { background-image: radial-gradient(farthest-side, $_dot_color 95%, transparentize($_dot_color, 1)); }
+}
+
+%button,
+button {
+  @at-root %button_basic, & {
+
+    min-height: 22px;
+    min-width: 20px;
+    padding: 2px 6px;
+    border: 1px solid;
+    border-radius: 3px;
+    transition: $button_transition;
+    background-clip: padding-box;
+
+    @include button(normal);
+
+    @include focus-ring();
+
+    &:hover {
+      @include button(hover);
+      -gtk-icon-filter: brightness(1.2);
+    }
+
+    &.keyboard-activating,
+    &:active,
+    &:checked {
+      @include button(active);
+
+      background-clip: if($variant!='dark', border-box, padding-box);
+
+      &:not(:disabled) label:disabled { color: inherit; opacity: 0.6; }
+    }
+
+    &:checked:hover { @include button(active); }
+    &:checked:active { @include button(active); }
+
+    &:disabled {
+      @include button(insensitive);
+      -gtk-icon-filter: opacity(0.5);
+
+      &:active,
+      &:checked { @include button(insensitive-active); }
+    }
+
+    @at-root %button_basic_flat,
+    &.flat {
+      @include button(undecorated);
+      // to avoid adjacent buttons borders clashing when transitioning, the transition on the normal state is set
+      // to none, while it's added back in the hover state, so the button decoration will fade in on hover, but
+      // it won't fade out when the pointer leave the button allocation area. To make the transition more evident
+      // in this case the duration is increased.
+      transition: none;
+
+      &:hover {
+        @include button(hover);
+        transition: $button_transition;
+        transition-duration: 500ms;
+      }
+      &.keyboard-activating,
+      &:active,
+      &:checked {
+        @include button(active);
+        transition: $button_transition;
+      }
+      &:disabled { @include button(undecorated); }
+    }
+
+    &.image-button {
+      min-width: 24px;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+
+    &.text-button {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    %image_text_button,
+    &.text-button.image-button {
+      padding-left: 5px;
+      padding-right: 5px;
+
+      label {
+        padding-left: 2px;
+        padding-right: 2px;
+
+        &:first-child {
+          padding-left: 7px;
+          padding-right: 2px;
+        }
+        &:last-child {
+          padding-right: 7px;
+          padding-left: 2px;
+        }
+        &:only-child {
+          padding-left: 7px;
+          padding-right: 7px;
+        }
+      }
+
+      &.popup { padding-right: 7px; padding-left: 7px; }
+    }
+
+    &.arrow-button {
+      padding-left: 10px;
+      padding-right: 10px;
+
+      > box {
+        border-spacing: 4px;
+      }
+    }
+
+    @at-root %button_basic_drop_active,
+    &:drop(active) {
+      color: $drop_target_color;
+      border-color: $drop_target_color;
+      box-shadow: none;
+    }
+  }
+
+  // big standalone buttons like in Documents pager
+  &.osd {
+    min-width: 26px;
+    min-height: 32px;
+
+    &.image-button { min-width: 34px; }
+
+    color: $osd_fg_color;
+    background-color: $osd_bg_color;
+    border-color: darken($osd_bg_color, 8%);
+    border-radius: 5px;
+
+    box-shadow: none;
+
+    &:hover {
+      color: $selected_bg_color;
+
+      border: none;
+      box-shadow: none;
+    }
+
+    &:active,
+    &:checked {
+      @include button(osd-active);
+
+      border: none;
+      box-shadow: none;
+    }
+
+    &:disabled {
+      @include button(osd-insensitive);
+
+      border: none;
+    }
+  }
+
+  //overlay / OSD style
+  @at-root %osd_button,
+  .osd & {
+    @include button(osd);
+
+    &:hover { @include button(osd-hover); }
+
+    &:active,
+    &:checked {
+      background-clip: padding-box;
+      @include button(osd-active);
+    }
+
+    &:disabled { @include button(osd-insensitive); }
+
+    &.flat {
+      @include button(undecorated);
+
+      box-shadow: none;
+      text-shadow: none;
+      -gtk-icon-shadow: none;
+
+      &:hover { @include button(osd-hover); }
+
+      &:disabled {
+        @include button(osd-insensitive);
+        background-image: none;
+        border-color: transparent;
+        box-shadow: none;
+      }
+
+      &:active,
+      &:checked { @include button(osd-active); }
+    }
+  }
+
+  // Suggested and Destructive Action buttons
+  @each $b_type, $b_color, $b_fg in (suggested-action, $suggested_color, $suggested_fg_color),
+                                    (destructive-action, $destructive_color, $destructive_fg_color) {
+    &.#{$b_type} {
+      @include button(suggested_destructive, $b_color, $b_fg);
+      @include focus-ring();
+
+      &.flat {
+        @include button(undecorated);
+
+        color: $b_color;
+      }
+
+      &:hover { @include button(suggested_destructive, lighten($b_color, 10%), $b_fg); }
+
+      &:active,
+      &:checked { @include button(suggested_destructive, darken($b_color, 10%), $b_fg); }
+
+      &.flat {
+        &:disabled {
+          @include button(undecorated);
+
+          color: $insensitive_fg_color;
+        }
+      }
+
+      &:disabled {
+        @include button(insensitive);
+
+        &:active,
+        &:checked { @include button(insensitive-active); }
+      }
+
+      .osd & {
+        @include button(osd);
+
+        &:hover { @include button(osd-hover); }
+
+        &:active,
+        &:checked { @include button(osd-active); }
+
+        &:disabled { @include button(osd-insensitive); }
+      }
+    }
+  }
+
+  stackswitcher > & {
+    // to position the needs attention dot, padding is added to the button
+    // child, a label needs just lateral padding while an icon needs vertical
+    // padding added too.
+
+    > label {
+      padding: 0 6px;
+      margin: 0 -6px;
+    }
+
+    > image {
+      padding: 3px 6px;
+      margin: -3px -6px;
+    }
+
+    &.needs-attention {
+      > label,
+      > image { @extend %needs_attention; }
+    }
+  }
+
+  // hide separators
+  &.font{
+    separator { background-color: transparent; }
+    > box { border-spacing: 6px; }
+    > box > box > label { font-weight: bold; }
+  }
+
+  .linked:not(.vertical) > & { @extend %linked; }
+
+  .linked.vertical > & { @extend %linked_vertical; }
+
+  %circular_button,
+  menubutton.circular &,
+  &.circular { // force circular button shape
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+    border-radius: 9999px;
+
+    label { padding: 0; }
+  }
+}
+
+// Some crazy linking stuff
+@mixin linking_rules($a:0.7, $var:$variant, $vert:'false', $entry_rules:'true', $button_rules:'true',
+                     $e_border:$entry_border, $b_border:$button_border) {
+
+  $_border: if($vert=='false', left, top);
+
+  @if $entry_rules=='true' {
+    > entry + entry { border-#{$_border}-color: transparentize($e_border, $a); }
+
+    > entry.error + entry,
+    > entry + entry.error { border-#{$_border}-color: if($var=='light', $error_color, transparentize($e_border, $a)); }
+
+    > entry.warning + entry,
+    > entry + entry.warning { border-#{$_border}-color: if($var=='light', $warning_color, transparentize($e_border, $a)); }
+
+    > entry.error + entry.warning,
+    > entry.warning + entry.error { border-#{$_border}-color: if($var=='light', mix($error_color, $warning_color, 50%), transparentize($e_border, $a));}
+
+    @each $e_type, $e_color in (':focus',$selected_bg_color),
+                               (':drop(active)', $drop_target_color),
+                               ('.warning:focus', $warning_color),
+                               ('.error:focus', $error_color) {
+
+      > entry + entry#{$e_type}:not(:last-child),
+      > entry + entry#{$e_type}:last-child { border-#{$_border}-color: if($var=='light', $e_color, $e_border); }
+
+      > entry#{$e_type}:not(:only-child) {
+        + entry,
+        + button,
+        + combobox > box > button.combo { border-#{$_border}-color: if($var=='light', $e_color, $e_border); }
+      }
+    }
+    > button:active + entry,
+    > button:checked + entry { border-#{$_border}-color: if($var=='light', $selected_bg_color, $e_border); }
+  }
+  @if $button_rules=='true' {
+    $_uncolored_button: 'button:not(:checked):not(:active):not(.suggested-action):not(.destructive-action)';
+
+    > button + button { border-#{$_border}-style: none; }
+
+    > #{$_uncolored_button}:hover:not(:only-child),
+    > #{$_uncolored_button}:hover + #{$_uncolored_button} { box-shadow: inset if($vert=='false', 1px 0, 0 1px) $b_border; }
+
+    > #{$_uncolored_button}:disabled:not(:only-child),
+    > #{$_uncolored_button}:disabled + #{$_uncolored_button}:not(:hover) { box-shadow: inset if($vert=='false', 1px 0, 0 1px) transparentize($b_border, 0.5); }
+
+    > button:active + #{$_uncolored_button}:hover,
+    > button:checked + #{$_uncolored_button}:hover,
+    > button.suggested-action + #{$_uncolored_button}:hover,
+    > button.destructive-action + #{$_uncolored_button}:hover,
+    > entry + #{$_uncolored_button}:hover:not(:only-child),
+
+    > #{$_uncolored_button}:first-child:disabled,
+    > #{$_uncolored_button}:disabled + #{$_uncolored_button}:disabled,
+    > #{$_uncolored_button}:first-child:hover,
+    > button:active + #{$_uncolored_button}:disabled,
+    > button:checked + #{$_uncolored_button}:disabled,
+    > button.suggested-action + #{$_uncolored_button}:disabled,
+    > button.destructive-action + #{$_uncolored_button}:disabled,
+    > entry + #{$_uncolored_button}:disabled:not(:only-child), { box-shadow: none; }
+  }
+}
+
+// special case, because path-bars are bugged
+@mixin pathbar_linking_rules($sep_color:if($variant!='dark', transparentize($button_border, 0.6), transparentize($button_border, 0.5))) {
+
+  > button + button { border-left-style: none; }
+
+  > button:hover:not(:checked):not(:active):not(:only-child) {
+
+    &:hover {
+      box-shadow: inset  1px 0 $sep_color,
+                  inset -1px 0 $sep_color;
+    }
+    &:first-child:hover { box-shadow: inset -1px 0 $sep_color; }
+    &:last-child:hover { box-shadow: inset 1px 0 $sep_color; }
+  }
+}
+
+// Apply the rules defined above
+.linked:not(.vertical) {
+  &:not(.path-bar) { @include linking_rules(); }
+  &.path-bar { @include pathbar_linking_rules(); }
+}
+
+.linked.vertical { @include linking_rules($vert:'true'); }
+
+%needs_attention {
+  // the dot is drawn by using two radial gradient, the first one is the actual dot, the other
+  // simulates the shadow labels and icons normally have in buttons.
+  animation: needs_attention 150ms ease-in;
+
+  background-image: radial-gradient(farthest-side, $_dot_color 96%, transparentize($_dot_color,1 ));
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+
+  @if $variant != 'dark' { background-position: right 3px, right 4px; }
+
+  @else { background-position: right 3px, right 2px; }
+
+  &:dir(rtl) {
+    @if $variant != 'dark' { background-position: left 3px, left 4px; }
+
+    @else { background-position: left 3px, left 2px; }
+  }
+}
+
+
+%linked_not_left {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+%linked_not_right {
+  border-right-style: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+// 1st/last child are at text start/end
+%linked {
+  &:dir(ltr) {
+    &:not(:first-child) { @extend %linked_not_left; }
+    &:not(:last-child) { @extend %linked_not_right; }
+  }
+
+  &:dir(rtl) {
+    &:not(:first-child) { @extend %linked_not_right; }
+    &:not(:last-child) { @extend %linked_not_left; }
+  }
+}
+
+%linked_not_top {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+%linked_not_bottom {
+  border-bottom-style: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+%linked_vertical {
+  &:not(:first-child) { @extend %linked_not_top; }
+
+  &:not(:last-child) { @extend %linked_not_bottom; }
+}
+
+%undecorated_button {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: inset 0 1px transparentize(white, 1),
+              0 1px transparentize(white, 1);
+  text-shadow: none;
+  -gtk-icon-shadow: none;
+}
+
+.linked:not(.vertical) > menubutton,
+.linked:not(.vertical) > dropdown,
+.linked:not(.vertical) > colorbutton,
+.linked:not(.vertical) > fontbutton,
+.linked:not(.vertical) > filechooserbutton {
+  &:dir(ltr) {
+    &:not(:first-child) > button { @extend %linked_not_left; }
+    &:not(:last-child) > button { @extend %linked_not_right; }
+  }
+
+  &:dir(rtl) {
+    &:not(:first-child) > button { @extend %linked_not_right; }
+    &:not(:last-child) > button { @extend %linked_not_left; }
+  }
+}
+
+.linked.vertical > menubutton,
+.linked.vertical > dropdown,
+.linked.vertical > colorbutton,
+.linked.vertical > fontbutton,
+.linked.vertical > filechooserbutton {
+  &:not(:first-child) > button { @extend %linked_not_top; }
+  &:not(:last-child) > button { @extend %linked_not_bottom; }
+}
+
+/* menu buttons */
+modelbutton.flat {
+  min-height: 24px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 2px;
+
+  @extend %undecorated_button;
+
+  &:disabled { color: $insensitive_fg_color; }
+
+  &:hover, &:selected { @extend %selected_items; }
+}
+
+modelbutton.flat arrow {
+  background: none;
+  min-width: 16px;
+  min-height: 16px;
+
+  &:hover { background: none; }
+
+  &.left { -gtk-icon-source: -gtk-icontheme('pan-start-symbolic'); }
+
+  &.right { -gtk-icon-source: -gtk-icontheme('pan-end-symbolic'); }
+}
+
+/* oldstyle toolbar buttons */
+
+.toolbar > button,
+.toolbar > :not(.linked) > button,
+.toolbar :not(.linked) > menubutton > button,
+.toolbar :not(.linked) > scalebutton > button,
+.toolbar :not(.linked) > dropdown > button,
+.toolbar :not(.linked) > colorbutton > button,
+.toolbar :not(.linked) > fontbutton > button,
+.toolbar :not(.linked) > appchooserbutton > button,
+.toolbar :not(.linked) > combobox > box > button {
+  margin: 1px 0;
+  @extend %button_basic_flat;
+}
+
+button.color {
+  padding: 2px;
+
+  > colorswatch:only-child {
+    &, > overlay { border-radius: 0; }
+  }
+}
+
+/* list buttons */
+%list_button,
+list > row button.image-button:not(.flat) {
+  &:hover { @include button(hover); }
+  &:active,
+  &:checked { @include button(active); }
+
+  @each $b_type, $b_color, $b_fg in (suggested-action, $suggested_color, $suggested_fg_color),
+                                    (destructive-action, $destructive_color, $destructive_fg_color) {
+    &.#{$b_type} {
+      @include button(suggested_destructive, $b_color, $b_fg);
+    }
+  }
+}
+
+/*********
+ * Links *
+ *********/
+
+%link,
+link {
+  color: $link_color;
+  text-decoration: underline;
+
+  &:visited {
+    color: $link_visited_color;
+
+    *:selected & { color: mix($selected_fg_color, $selected_bg_color, 60%); }
+  }
+
+  &:hover {
+    color: lighten($link_color, 10%);
+
+    *:selected & { color: mix($selected_fg_color, $selected_bg_color, 90%); }
+  }
+
+  &:active {
+    color: $link_color;
+
+    *:selected & { color: mix($selected_fg_color, $selected_bg_color, 80%); }
+  }
+
+  &:disabled { color: transparentize(desaturate($link_color, 100%), 0.2); }
+
+  @at-root %link_selected,
+  &:selected,
+  *:selected & { color: mix($selected_fg_color, $selected_bg_color, 80%); }
+}
+
+link {
+  @include focus-ring();
+}
+
+button.link {
+  @extend %link;
+
+  &,
+  &:hover,
+  &:active,
+  &:checked {
+    @extend %undecorated_button;
+
+    text-shadow: none;
+  }
+
+  > label {
+    text-decoration: underline;
+  }
+}
+
+/*****************
+ * GtkSpinButton *
+ *****************/
+spinbutton {
+
+  button:active { color: $selected_fg_color; }
+  &:disabled { color: $insensitive_fg_color; }
+
+  text { @extend %entry; }
+
+  &:not(.vertical) {
+    text { min-width: 28px; }
+
+    button, text { @extend %linked; }
+
+    &:dir(ltr) text,
+    &:dir(rtl) button.up { border-radius: 3px 0 0 3px; }
+
+    > button + button { border-left-style: none; }
+
+    > button:hover:not(:active),
+    > button:hover:not(:active) + button { box-shadow: inset 1px 0 $button_border; }
+
+    > button:disabled + button:not(:disabled):not(:active):not(:checked):not(:hover),
+    > button:not(:disabled):not(:active):not(:checked):not(:hover) + button:disabled { box-shadow: inset 1px 0 transparentize($button_border, 0.5); }
+
+    > button:first-child:hover:not(:active),
+    > button.up:dir(rtl):hover:not(:active),
+    > text + button:not(:active):hover { box-shadow: none; }
+
+    > text:focus + button { border-left-color: if($variant!='dark', $selected_bg_color, $entry_border); }
+
+    > text:drop(active) + button { border-left-color: $drop_target_color; }
+
+    .osd & {
+      > button:hover:not(:active),
+      > button:hover:not(:active) + button { box-shadow: inset 1px 0 $osd_button_border; }
+
+      > button:first-child:hover:not(:active),
+      > button.up:dir(rtl):hover:not(:active),
+      > text + button:not(:active):hover { box-shadow: none; }
+
+      > text:focus + button { border-left-color: $osd_button_border; }
+    }
+  }
+  &.vertical {
+    button, text {
+      padding-left: 0;
+      padding-right: 0;
+      min-width: 0;
+
+      @extend %linked_vertical;
+    }
+
+    button.up { border-radius: 3px 3px 0 0; }
+
+    > text:focus + button { border-top-color: if($variant!='dark', $selected_bg_color, $entry_border); }
+
+    > text:drop(active) + button { border-top-color: $drop_target_color; }
+  }
+
+  font-feature-settings: "tnum";
+}
+
+/**************
+ * ComboBoxes *
+ **************/
+dropdown > popover.menu.background > contents { padding: 0; } //allow search entries with no margin
+
+dropdown > button > box {
+  border-spacing: 6px;
+
+  > stack > row.activatable:hover {
+    background: none;
+    box-shadow: none;
+  }
+}
+
+dropdown,
+combobox {
+  arrow {
+    -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
+    min-height: 16px;
+    min-width: 16px;
+  }
+
+  > popover.background.menu > contents {
+    padding: 4px 0;
+    border-radius: 2px;
+  }
+
+  // align menu labels with the button label
+  > popover.menu > contents modelbutton {
+    min-height: 16px;
+    padding: 5px 6px;
+    border-radius: 0;
+  }
+
+  &.linked {
+    button:nth-child(2) {
+      &:dir(ltr) { @extend %linked_not_left; }
+      &:dir(rtl) { @extend %linked_not_right; }
+    }
+  }
+
+  &:drop(active) { // FIXME: untested
+    box-shadow: none;
+
+    button.combo { @extend %button_basic_drop_active; }
+  }
+
+  // newstyle
+  popover {
+    padding: 0;
+
+    listview.view {
+      margin: 4px 0;
+      background-color: transparent;
+
+      & > row {
+        min-height: 16px;
+        padding: 5px 6px;
+
+        &:selected {
+          &, &:hover {
+            color: $selected_fg_color;
+            background-color: $selected_bg_color;
+          }
+        }
+      }
+    }
+
+    // drodowns with searchboxes on top
+    .dropdown-searchbar {
+      padding: 6px;
+      border-bottom: 1px solid $borders_color;
+    }
+  }
+}
+
+
+// the combo is a composite widget so the way we do button linking doesn't
+// work, special case needed. See
+// https://bugzilla.gnome.org/show_bug.cgi?id=733979
+
+.linked:not(.vertical) > filechooserbutton > combobox,
+.linked:not(.vertical) > appchooserbutton > combobox,
+.linked:not(.vertical) > combobox {
+  &:dir(ltr) {
+    &:not(:first-child) > box > button.combo { @extend %linked_not_left; }
+    &:not(:last-child) > box > button.combo { @extend %linked_not_right; }
+  }
+
+  &:dir(rtl) {
+    &:not(:first-child) > box > button.combo { @extend %linked_not_right; }
+    &:not(:last-child) > box > button.combo { @extend %linked_not_left; }
+  }
+}
+
+.linked.vertical > filechooserbutton > combobox,
+.linked.vertical > appchooserbutton > combobox,
+.linked.vertical > combobox {
+  &:not(:first-child) > box > button.combo { @extend %linked_not_top; }
+  &:not(:last-child) > box > button.combo { @extend %linked_not_bottom; }
+}
+
+/************
+ * Toolbars *
+ ************/
+%toolbar {
+  padding: 4px;
+  border-spacing: 1px;
+  background-color: $bg_color;
+}
+
+.toolbar {
+  @extend %toolbar;
+
+  // on OSD
+  .osd & { background-color: transparent; }
+
+  // stand-alone OSD toolbars
+  &.osd {
+    padding: 7px;
+    border: 1px solid transparentize(black, 0.5);
+    border-radius: 3px;
+    background-color: transparentize($osd_bg_color, 0.1);
+
+    &.left,
+    &.right,
+    &.top,
+    &.bottom { border-radius: 0; } // positional classes for `attached` osd toolbars
+
+    &.top { border-width: 0 0 1px 0; }
+    &.bottom { border-width: 1px 0 0 0; }
+    &.left { border-width: 0 1px 0 0; }
+    &.right { border-width: 0 0 0 1px; }
+  }
+
+  // toolbar separators
+  separator { background: none; }
+  &.horizontal separator { margin: 0 6px; }
+  &.vertical separator { margin: 6px 0; }
+}
+
+//searchbar & location-bar
+searchbar > revealer > box {
+  padding: 6px;
+  border-spacing: 6px;
+  @extend %toolbar;
+
+  border-width: 0 0 1px;
+}
+
+/**************
+ * GtkInfoBar *
+ **************/
+infobar {
+  > revealer > box {
+    padding: 8px;
+    border-spacing: 12px;
+    border-style: none;
+  }
+
+  &.info,
+  &.question,
+  &.warning,
+  &.error {
+    > revealer > box {
+      background-color: $selected_bg_color;
+      color: $selected_fg_color;
+      caret-color: currentColor;
+
+      button { @extend %selected_button }
+
+      selection {
+        color: $selected_bg_color;
+        background-color: $selected_fg_color;
+      }
+    }
+  }
+}
+
+//close button for info and searchbar
+
+infobar > revealer > box > button.close,
+searchbar > revealer > box > button.close {
+  @extend %selected_button_flat;
+}
+
+//
+// Buttons on selected backgrounds
+//
+%selected_button {
+
+  @at-root %selected_button_normal, & {
+    color: $selected_fg_color;
+    background-color: transparentize($selected_fg_color, 1);
+    border-color: transparentize($selected_fg_color, 0.5);
+  }
+
+  @at-root %selected_button_flat,
+  &.flat {
+    @include button(undecorated);
+    color: $selected_fg_color;
+    background-color: transparentize($selected_fg_color, 1);
+
+    @at-root %selected_button_flat_disabled,
+    &:disabled {
+      &, label { color: transparentize($selected_fg_color, 0.6); }
+    }
+  }
+  &:hover {
+    color: $selected_fg_color;
+    background-color: transparentize($selected_fg_color, 0.8);
+    border-color: transparentize($selected_fg_color, 0.2);
+  }
+  @at-root %selected_button_active,
+  &:active, &:active:hover, &:checked {
+    color: $selected_bg_color;
+    background-color: $selected_fg_color;
+    border-color: $selected_fg_color;
+  }
+  &:disabled {
+    &, label { color: transparentize($selected_fg_color, 0.5); }
+    background-color: transparentize($selected_fg_color, 1);
+    border-color: transparentize($selected_fg_color, 0.6);
+
+    @at-root %selected_button_disabled_active,
+    &:active, &:checked {
+      color: $selected_bg_color;
+      background-color: transparentize($selected_fg_color, 0.5);
+      border-color: transparentize($selected_fg_color, 0.6);
+    }
+  }
+}
+
+
+/*****************
+ * Title buttons *
+ *****************/
+
+windowcontrols {
+  border-spacing: 6px;
+
+  &:not(.empty) {
+    &.start:dir(ltr),
+    &.end:dir(rtl) {
+      margin-right: 7px;
+    }
+
+    &.start:dir(rtl),
+    &.end:dir(ltr) {
+      margin-left: 7px;
+    }
+  }
+
+  button {
+    padding: 0;
+    min-width: 24px;
+
+    @include button(undecorated);
+    background-color: transparentize($header_bg, 1);
+
+    &:hover {
+      @include button(header-hover);
+    }
+    &:active, &:checked {
+      @include button(header-active);
+    }
+    &.close, &.maximize, &.minimize {
+      &, &:hover, &:active, &:checked {
+        color: transparent;
+        background-color: transparent;
+        background-position: center;
+        background-repeat: no-repeat;
+        border-width: 0;
+
+        &:backdrop { opacity: 1; }
+      }
+    }
+    // Load png assets for each button
+    @each $k in ('close','maximize', 'minimize') {
+      @each $l, $m in ('',''), (':backdrop','-backdrop'), (':hover','-hover'), (':active','-active') {
+
+        &.#{$k}#{$l} { background-image: -gtk-scaled(url('assets/titlebutton-#{$k}#{$m}#{$darker_asset_suffix}.png'),
+                                                     url('assets/titlebutton-#{$k}#{$m}#{$darker_asset_suffix}@2.png')); }
+      }
+    }
+  }
+}
+
+/***************
+ * Header bars *
+ ***************/
+%titlebar,
+headerbar {
+  padding: 0 7px;
+  min-height: 42px;
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: opacify($header_border, 1);
+  border-radius: 0;
+
+  color: $header_fg;
+  background-color: opacify($header_bg, 1);
+  box-shadow: inset 0  1px lighten($header_bg, 3%);
+
+  .csd & {  // Transparent header-bars only in csd windows
+    background-color: $header_bg;
+    border-color: $header_border;
+  }
+
+  &:backdrop {
+    color: transparentize($header_fg, 0.3);
+    background-color: opacify($header_bg_backdrop, 1);
+    transition: $backdrop_transition;
+
+    .csd & { background-color: $header_bg_backdrop; }
+  }
+
+  .title {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-weight: normal;
+  }
+
+  .subtitle {
+    font-size: smaller;
+    padding-left: 12px;
+    padding-right: 12px;
+
+    @extend .dim-label;
+  }
+
+  // squared corners when the window is maximized, tiled, or fullscreen
+  .tiled &,
+  .tiled-top &,
+  .tiled-left &,
+  .tiled-right &,
+  .tiled-bottom &,
+  .maximized &,
+  .fullscreen & {
+    &:backdrop, & {
+      border-radius: 0;
+    }
+  }
+
+  // non-transparent headerbar for maximized windows
+  .maximized & {
+    background-color: opacify($header_bg, 1);
+    border-color: opacify($header_border, 1);
+
+    &:backdrop { background-color: opacify($header_bg_backdrop, 1); }
+  }
+
+  &.default-decoration {
+    min-height: 28px;
+    padding: 0 3px;
+    background-color: opacify($header_bg, 1);
+    border-bottom-width: 0;
+
+    .maximized & { background-color: opacify($header_bg, 1); }
+
+    windowcontrols {
+      button,
+      menubutton {
+        min-height: 24px;
+        min-width: 24px;
+        margin: 0;
+        padding: 0;
+      }
+
+      menubutton button {
+        min-height: 20px;
+        min-width: 20px;
+        margin: 0;
+        padding: 2px;
+      }
+    }
+  }
+
+  .solid-csd & {
+    &:backdrop, & {
+      &:dir(rtl), &:dir(ltr) { // specificity bump
+        margin: 1px;
+        background-color: $header_bg;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+headerbar {
+  @extend %header_widgets;
+
+  > windowhandle > box {
+    &,
+    > box.start,
+    > box.end {
+      border-spacing: 6px;
+    }
+  }
+
+  // add vertical margins to common widget on the headerbar to avoid them spanning the whole height
+  entry,
+  spinbutton,
+  separator:not(.sidebar),
+  button,
+  menubutton {
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  // Reset margins for buttons inside menubutton
+  menubutton > button {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+
+  switch {
+    margin-top: 9px;
+    margin-bottom: 9px;
+  }
+}
+
+
+.titlebar:not(headerbar) {
+  window.csd > & {
+    // in csd we assume every titlebar is a headerbar so reset anything, this is needed for split toolbars cases
+    padding: 0;
+    background-color: transparent;
+    background-image: none;
+    border-style: none;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  separator { background-color: opacify($header_border, 1); }
+
+  @extend %titlebar;
+}
+
+// Fixes stacked transparent headerbars not appearing transparent
+.csd headerbar headerbar {
+  &:backdrop, & {
+    background-color: transparent;
+  }
+}
+
+// Development versions of apps to use a differently styled headerbar
+window.devel {
+  headerbar.titlebar {
+    background-image: cross-fade(20% -gtk-icontheme("system-run-symbolic"), image(transparent));
+    background-position: 90% 2%;
+    background-size: 256px 256px;
+    background-repeat: no-repeat;
+  }
+}
+
+%header_separator {
+  min-width: 1px;
+  min-height: 1px;
+  background: none;
+  border-width: 0 1px;
+  border-image: linear-gradient(to bottom,
+                                transparentize($header_fg, 1) 25%,
+                                transparentize($header_fg, 0.65) 25%,
+                                transparentize($header_fg, 0.65) 75%,
+                                transparentize($header_fg, 1) 75%) 0 1/0 1px stretch;
+
+  &:backdrop { opacity: 0.6; }
+}
+
+%header_widgets {
+  // Headerbar Entries
+  entry {
+    @include entry(header-normal);
+
+    &:backdrop { opacity: 0.85; }
+
+    &:focus {
+      @include entry(header-focus);
+      background-clip: if($variant=='light' or $variant=='lighter', border-box, padding-box);
+
+      image { color: $selected_fg_color; }
+    }
+    &:disabled { @include entry(header-insensitive); }
+
+    selection:focus {
+      background-color: $selected_fg_color;
+      color: $selected_bg_color;
+    }
+
+    progress {
+      border-color: $selected_bg_color;
+      background-image: none;
+      background-color: transparent;
+    }
+
+    @each $e_type, $e_color, $e_fg_color in (warning, $warning_color, $warning_fg_color),
+                                            (error, $error_color, $error_fg_color) {
+      &.#{$e_type} {
+        color: $e_fg_color;
+        border-color: if($variant=='light' or $variant=='lighter', $e_color, $header_entry_border);
+        background-color: mix($e_color, $header_bg, 60%);
+
+        &:focus {
+          color: $e_fg_color;
+          background-color: $e_color;
+        }
+        selection, selection:focus {
+          background-color: $e_fg_color;
+          color: $e_color;
+        }
+      }
+    }
+  }
+
+  // Headerbar Buttons
+  button {
+
+    @include button(header-normal);
+
+    &:backdrop { opacity: 0.7; }
+
+    &:hover { @include button(header-hover); }
+    &:active, &:checked {
+      @include button(header-active);
+      background-clip: if($variant=='light' or $variant=='lighter', border-box, padding-box);
+    }
+    &:disabled { @include button(header-insensitive); }
+    &:disabled:active, &:disabled:checked { @include button(header-insensitive-active); }
+  }
+
+  .selection-mode & button,
+  &.selection-mode button {
+
+    &, &.flat {
+      @include button(undecorated);
+      color: $selection_mode_fg;
+      background-color: transparentize($selection_mode_fg, 1);
+    }
+    &:hover { @extend %selected_button_normal; }
+    &:active, &:checked { @extend %selected_button_active; }
+
+    &:disabled {
+      @extend %selected_button_flat_disabled;
+
+      &:checked, &:active { @extend %selected_button_disabled_active; }
+    }
+  }
+
+  // Linking stuff
+
+  // Disconnect linked buttons
+  .linked:not(.vertical):not(.path-bar):not(stackswitcher) {
+    button:not(:last-child):not(:only-child) { margin-right: 1px; }
+  }
+
+  // Reset buttons
+  .linked:not(.vertical):not(.path-bar) > button {
+    &, &:hover, &:active, &:checked, &:disabled {
+      border-radius: 3px;
+      border-style: solid;
+    }
+  }
+  .linked:not(.vertical):not(.path-bar) {
+    $_uncolored_button: 'button:not(:checked):not(:active):not(.suggested-action):not(.destructive-action)';
+
+    > #{$_uncolored_button}:hover:not(:only-child),
+    > #{$_uncolored_button}:hover + #{$_uncolored_button},
+    > #{$_uncolored_button}:disabled:not(:only-child),
+    > #{$_uncolored_button}:disabled + #{$_uncolored_button}:not(:hover) { box-shadow: none; }
+  }
+
+  // special case for path-bars and stack-switchers
+  stackswitcher.linked:not(.vertical):not(.path-bar),
+  .linked:not(.vertical).path-bar {
+
+    > button {
+      @include button(header-hover);
+
+      &:hover { background-color: lighten($header_button_bg, 15%); }
+      &:active, &:checked { @include button(header-active); }
+      &:disabled { color: transparentize($header_fg, 0.4); }
+
+      &, &:hover, &:active, &:checked, &:disabled { @extend %linked; }
+    }
+    @include pathbar_linking_rules($sep_color:$header_button_border);
+  }
+
+  // use linking rules for entries only
+  .linked:not(.vertical):not(.path-bar) {
+    @include linking_rules( $a:0.5,
+                            $var:if($variant=='light' or $variant=='lighter', 'light', 'dark'),
+                            $button_rules:'false',
+                            $e_border:$header_entry_border,
+                            $b_border:$header_button_border );
+  }
+
+  // Headerbar Suggested and Destructive Action buttons
+  @each $b_type, $b_color, $b_fg in (suggested-action, $suggested_color, $suggested_fg_color),
+                                    (destructive-action, $destructive_color, $destructive_fg_color) {
+    button.#{$b_type} {
+      @include button(suggested_destructive, $b_color, $b_fg);
+
+      &.flat {
+        @include button(undecorated);
+        color: $b_color;
+      }
+      &:hover {
+        @include button(suggested_destructive, lighten($b_color, 10%), $b_fg);
+      }
+      &:active, &:checked {
+        @include button(suggested_destructive, darken($b_color, 10%), $b_fg);
+      }
+      &.flat:disabled,
+      &:disabled { @include button(header-insensitive); }
+    }
+    button.#{$b_type}:backdrop,
+    button.#{$b_type}:backdrop {
+      opacity: 0.8;
+    }
+  }
+
+  // Headerbar Spinbuttons
+  spinbutton:not(.vertical) {
+    &:focus {
+    color: $selected_fg_color;
+    caret-color: $selected_fg_color;
+    }
+    button {
+      &,&:disabled { @include button(header-hover); }
+
+      &:hover { background-color: lighten($header_button_bg, 15%); }
+      &:active, &:checked { @include button(header-active); }
+      &:disabled { color: transparentize($header_fg, 0.4); }
+    }
+
+    > button + button { border-left-style: none; }
+
+    > button:hover:not(:active),
+    > button:hover + button { box-shadow: inset 1px 0 $header_button_border; }
+
+    > button:disabled + button:not(:disabled):not(:active):not(:checked):not(:hover),
+    > button:not(:disabled):not(:active):not(:checked):not(:hover) + button:disabled { box-shadow: inset 1px 0 $header_button_border; }
+
+    > button:first-child:hover:not(:active),
+    > entry + button:not(:active):hover { box-shadow: none; }
+
+    > entry:focus + button { border-left-color: if($variant=='light' or $variant=='lighter', $selected_bg_color, $header_entry_border); }
+  }
+
+  // Headerbar ComboBoxes
+  combobox {
+    &:disabled { color: transparentize($header_fg, 0.6); }
+
+    > .linked > button.combo {
+      @include entry(header-normal);
+
+      &:hover { @include entry(header-focus); box-shadow: none; }
+      &:disabled { @include entry(header-insensitive); }
+    }
+
+    > .linked > entry.combo {
+      &:dir(ltr) {
+        border-right-style: none;
+
+        &:focus { box-shadow: none; }
+        @if $variant=='light' or $variant=='lighter' { &:focus { box-shadow: 1px 0 $selected_bg_color; } }
+      }
+      &:dir(rtl) {
+        border-left-style: none;
+
+        &:focus { box-shadow: none; }
+        @if $variant=='light' or $variant=='lighter' { &:focus { box-shadow: -1px 0 $selected_bg_color; } }
+      }
+    }
+    > .linked > button.combo {
+      &:dir(ltr) {
+        &, &:hover, &:active, &:checked, &:disabled {
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+        }
+      }
+      &:dir(rtl) {
+        &, &:hover, &:active, &:checked, &:disabled {
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+    }
+  }
+
+  // Headerbar Switches
+  switch {
+    &:backdrop { opacity: 0.75; }
+  }
+
+  progressbar {
+    trough { background-color: if($variant=='light', opacify($header_button_border, 0.05), $header_button_border); }
+
+    &:backdrop { opacity: 0.75; }
+  }
+
+  // Headerbar Scale
+  scale {
+    $_trough_bg: if($variant=='light' or $variant=='lighter', opacify($header_button_border, 0.05), $header_button_border);
+
+    &:backdrop { opacity: 0.75; }
+
+    slider {
+      $_slider_border: if($variant=='light' or $variant=='lighter', opacify($header_button_border, 0.2), opacify($header_button_border, 0.3));
+      $_slider_bg: if($variant=='light' or $variant=='lighter', opacify($header_button_bg,1), lighten(opacify($header_bg,1), 10%));
+
+      background-color: $_slider_bg;
+      border-color: $_slider_border;
+
+      &:hover {
+        background-color: lighten($_slider_bg, 5%);
+        border-color: $_slider_border;
+      }
+      &:active {
+        background-color: $selected_bg_color;
+        border-color: $selected_bg_color;
+      }
+      &:disabled {
+        background-color: mix($_slider_bg, $header_bg, 70%);
+        border-color: $_slider_border;
+      }
+    }
+    trough {
+      background-color: $_trough_bg;
+
+      &:disabled { background-color: if($variant=='light' or $variant=='lighter', transparentize($_trough_bg, 0.05), transparentize($_trough_bg, 0.1)); }
+    }
+  }
+}
+
+
+/************
+ * Pathbars *
+ ************/
+
+pathbar > button {
+  &.text-button, &.image-button, & {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  &.text-button.image-button label {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  &.text-button.image-button, & {
+    label:last-child { padding-right: 10px; }
+    label:first-child { padding-left: 10px; }
+  }
+
+  image {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  &.slider-button {
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+}
+
+/**************
+ * Tree Views *
+ **************/
+columnview.view,
+treeview.view {
+  border-left-color:  transparentize($fg_color, 0.85); // this is actually the tree lines color,
+  border-top-color: transparentize(black, 0.9);        // while this is the grid lines color, better then nothing
+
+  @include focus-ring();
+
+  > rubberband { @extend rubberband; } // to avoid borders being overridden by the previously set props
+
+  &:selected {
+    &:focus, & {
+      border-radius: 0;
+      border-left-color: mix($selected_fg_color, $selected_bg_color, 50%);
+      border-top-color: transparentize($fg_color, 0.9); // doesn't work unfortunately
+
+      @extend %selected_items;
+    }
+  }
+
+  &:disabled {
+    color: $insensitive_fg_color;
+
+    &:selected {
+      color: mix($selected_fg_color, $selected_bg_color, 40%);
+    }
+  }
+
+  &.separator {
+    min-height: 2px;
+    color: transparentize(black, 0.9);
+  }
+
+  &:drop(active) {
+    box-shadow: none;
+  }
+
+  > dndtarget:drop(active) {
+    border-style: solid none;
+    border-width: 1px;
+    border-color: mix($fg_color, $selected_bg_color, 50%);
+
+    &.after { border-top-style: none; }
+
+    &.before { border-bottom-style: none; }
+  }
+
+  &.expander {
+    // GtkTreeView uses the larger of the expander’s min-width and min-height
+    min-width: 16px;
+    min-height: 16px;
+    -gtk-icon-source: -gtk-icontheme('pan-end-symbolic');
+
+    &:dir(rtl) { -gtk-icon-source: -gtk-icontheme('pan-end-symbolic-rtl'); }
+
+    color: mix($fg_color, $base_color, 50%);
+
+    &:hover { color: $fg_color; }
+
+    &:selected {
+      color: mix($selected_fg_color, $selected_bg_color, 70%);
+
+      &:hover { color: $selected_fg_color; }
+    }
+
+    &:checked { -gtk-icon-source: -gtk-icontheme('pan-down-symbolic'); }
+  }
+
+  &.progressbar { // progress bar in treeviews
+    color: $selected_fg_color;
+    border-radius: 3px;
+    background-color: $selected_bg_color;
+    background-image: image($selected_bg_color);
+    box-shadow: none;
+
+    &:selected {
+      &:focus, & {
+        color: $selected_bg_color;
+        box-shadow: none;
+        background-color: $selected_fg_color;
+      }
+    }
+  }
+
+  &.trough { // progress bar trough in treeviews
+    color: $fg_color;
+    background-color: $button_border;
+    border-radius: 3px;
+    border-width: 0;
+
+    &:selected {
+      &:focus, & {
+        color: $selected_fg_color;
+        background-color: transparentize(black, 0.8);
+        border-radius: 3px;
+        border-width: 0;
+      }
+    }
+  }
+
+  > header {
+    > button {
+      $_column_header_color: mix($fg_color,$base_color,80%);
+
+      @extend %column_header_button;
+
+      color: $_column_header_color;
+      background-color: $base_color;
+      font-weight: bold;
+      text-shadow: none;
+      box-shadow: none;
+
+      &:hover {
+        @extend %column_header_button;
+
+        color: $selected_bg_color;
+        transition: none; //I shouldn't need this
+      }
+
+      &:active {
+        @extend %column_header_button;
+
+        color: $fg_color;
+        transition: none; //I shouldn't need this
+      }
+      sort-indicator {
+        &.ascending {
+          -gtk-icon-source: -gtk-icontheme('pan-up-symbolic');
+        }
+        &.descending {
+          -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
+        }
+
+        min-height: 16px;
+        min-width: 16px;
+      }
+    }
+  }
+
+  button.dnd,
+  header.button.dnd { // for treeview-like derive widgets
+    &:active, &:selected, &:hover, & {
+      padding: 0 6px;
+      color: $selected_fg_color;
+      background-image: none;
+      background-color: $selected_bg_color;
+      border-style: none;
+      border-radius: 0;
+      box-shadow: none;
+      text-shadow: none;
+      transition: none;
+    }
+  }
+
+  acceleditor > label { background-color: $selected_bg_color; } // see tests/testaccel to test
+}
+
+%column_header_button {
+  padding: 0 6px;
+  background-image: none;
+  border-style: none solid none none;
+  border-image: linear-gradient(to bottom,
+                $base_color 20%,
+                transparentize(if($variant != 'dark', black, white), 0.89) 20%,
+                transparentize(if($variant != 'dark', black, white), 0.89) 80%,
+                $base_color 80%) 0 1 0 0 / 0 1px 0 0 stretch;
+  border-radius: 0;
+  text-shadow: none;
+
+  &:disabled {
+    border-color: $bg_color;
+    background-image: none;
+  }
+
+  &:last-child {
+    border-right-style: none;
+    border-image: none;
+  }
+}
+
+/***************
+ * Popovers   *
+ ***************/
+$_popover_bg: if($variant!='dark', $base_color, $bg_color);
+
+popover.background {
+  background-color: transparent;
+  font: initial; // Decouple the font of popovers from their entry/textview
+
+  > arrow,
+  > contents {
+    background-color: $_popover_bg;
+    background-clip: border-box;
+    border: 1px solid darken($borders_color, 5%);
+    box-shadow: 0 2px 6px 1px if($variant!='dark', transparentize(black, 0.93), transparentize(black, 0.65));
+  }
+
+  > contents {
+    padding: 8px;
+    border-radius: 3px;
+
+    > list,
+    > .view,
+    > .toolbar {
+      border-style: none;
+      background-color: transparent;
+    }
+
+    separator {
+      background-color: $_popover_bg;
+      margin: 2px 0;
+    }
+
+    list separator { margin: 2px 0; }
+  }
+
+  .osd &,
+  &.touch-selection,
+  &.magnifier {
+    background-color: transparent;
+
+    > arrow,
+    > contents {
+      @extend %osd;
+    }
+  }
+
+  &.touch-selection,
+  &.magnifier {
+    button { @extend %osd_button; }
+  }
+}
+
+magnifier {
+  background-color: $base_color;
+}
+
+/**********************
+ * Popover Base Menus *
+ **********************/
+
+$_menu-padding: 8px; //inner menuitem padding
+//global $menu-margin for outside menuitems
+
+popover.menu {
+  padding: 0;
+
+  box.inline-buttons {
+    padding: 0 $_menu-padding;
+
+    button.image-button.model {
+      @include button(normal);
+
+      &, &:dir(ltr) { margin-left: 6px; }
+      &:dir(rtl) { margin-right: 6px; }
+
+      &:focus { @include button(hover); }
+      &:active { @include button(active); }
+    }
+  }
+
+  box.circular-buttons {
+    padding: $_menu-padding $_menu-padding 6px;
+
+    button.circular.image-button.model {
+      @extend %list_button;
+
+      padding: 11px;
+
+      &:focus { @include button(hover); }
+      &:active { @include button(active); }
+    }
+  }
+
+  accelerator {
+    color: gtkalpha(currentColor,0.55);
+
+    &:dir(ltr) { margin-left: 22px; }//$_menu-padding;
+    &:dir(rtl) { margin-right: 22px; }//$_menu-padding;
+  }
+
+  arrow.left,
+  radio.left,
+  check.left {
+    margin-left: -1px;
+    margin-right: 7px;
+  }
+
+  arrow.right,
+  radio.right,
+  check.right {
+    margin-left: 7px;
+    margin-right: -1px;
+  }
+
+  scale {
+    padding: 5px $_menu-padding;
+  }
+
+  modelbutton {
+    min-height: 16px;
+    min-width: 40px;
+    padding: 5px $_menu-padding;
+    border-radius: 2px;
+  }
+
+  label.title {
+    font-weight: bold;
+    padding: 4px ($_menu-padding + 20px); //this will fall apart with font sizing
+  }
+}
+
+// initial styling for popover menu and bar
+menubar {
+  padding: 0;
+  background-color: opacify($header_bg, 1);
+  color: $header_fg;
+
+  &:backdrop {
+    color: transparentize($header_fg, 0.3);
+  }
+
+  > item {
+    min-height: 16px;
+    padding: 4px $_menu-padding;
+
+    &:selected { //Seems like it :selected even with keyboard focus
+      @extend %selected_items;
+    }
+
+    &:disabled {
+      color: transparentize($header_fg, 0.6);
+      border-color: transparent;
+    }
+  }
+
+  & > item popover.menu modelbutton {
+    border-radius: 0;
+  }
+
+  & > item popover.menu.background > contents {
+    padding: 4px 0;
+    border-radius: 2px;
+  }
+
+  //nested submenus
+  & > item popover.menu popover.menu {
+    margin-top: -5px;
+  }
+}
+
+/*************
+ * Notebooks *
+ *************/
+notebook {
+  @include focus-ring("> header > tabs > tab:checked", $focus-state: 'focus:focus-visible')
+
+  > header {
+    padding: 2px;
+    border-color: $borders_color;
+    border-width: 1px;
+    background-color: $bg_color;
+
+    // ugly hack to hide the borders around the header
+    margin: -1px;
+    &.top { margin-bottom: 0; }
+    &.bottom { margin-top: 0; }
+    &.left { margin-right: 0; }
+    &.right { margin-left: 0; }
+
+    &.top, &.bottom { padding-left: 0; padding-right: 0; }
+    &.left, &.right { padding-top: 0; padding-bottom: 0; }
+
+    &.top {
+      padding-bottom: 0;
+      border-bottom-style: solid;
+      > tabs {
+        margin-bottom: -1px;
+        > tab {
+          padding: 2px 10px;
+          min-width: 20px;
+          min-height: 20px;
+
+          border: 1px solid transparent;
+          border-bottom: none;
+
+          // tab overlap
+          + tab {
+            margin-left: -1px;
+          }
+
+          border-radius: 1px 1px 0 0;
+        }
+      }
+    }
+
+    &.bottom {
+      padding-top: 0;
+      border-top-style: solid;
+      > tabs {
+        margin-top: -1px;
+        > tab {
+          padding: 2px 10px;
+          min-width: 20px;
+          min-height: 20px;
+
+          border: 1px solid transparent;
+          border-top: none;
+
+          // tab overlap
+          + tab {
+            margin-left: -1px;
+          }
+
+          border-radius: 0 0 1px 1px;
+        }
+      }
+    }
+
+    &.left {
+      padding-right: 0;
+      border-right-style: solid;
+      > tabs {
+        margin-right: -1px;
+        > tab {
+          padding: 2px 10px;
+          min-width: 20px;
+          min-height: 20px;
+
+          border: 1px solid transparent;
+          border-right: none;
+
+          // tab overlap
+          + tab {
+            margin-top: -1px;
+          }
+
+          border-radius: 1px 0 0 1px;
+        }
+      }
+    }
+
+    &.right {
+      padding-left: 0;
+      border-left-style: solid;
+      > tabs {
+        margin-left: -1px;
+        > tab {
+          padding: 2px 10px;
+          min-width: 20px;
+          min-height: 20px;
+
+          border: 1px solid transparent;
+          border-left: none;
+
+          // tab overlap
+          + tab {
+            margin-top: -1px;
+          }
+
+          border-radius: 0 1px 1px 0;
+        }
+      }
+    }
+
+    &.top > tabs > arrow {
+      @extend %notebook_vert_arrows;
+    }
+
+    &.bottom > tabs > arrow {
+      @extend %notebook_vert_arrows;
+    }
+
+    @at-root %notebook_vert_arrows {
+      &.down {
+        -gtk-icon-source: -gtk-icontheme('pan-start-symbolic');
+        &:first-child { margin-right: 2px; }
+      }
+
+      &.up {
+        -gtk-icon-source: -gtk-icontheme('pan-end-symbolic');
+        &:last-child { margin-left: 2px; }
+      }
+    }
+
+    &.left > tabs > arrow {
+      @extend %notebook_horz_arrows;
+    }
+
+    &.right > tabs > arrow {
+      @extend %notebook_horz_arrows;
+    }
+
+    @at-root %notebook_horz_arrows {
+      &.down {
+        -gtk-icon-source: -gtk-icontheme('pan-up-symbolic');
+        &:first-child { margin-bottom: 2px; }
+      }
+
+      &.up {
+        -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
+        &:last-child { margin-top: 2px; }
+      }
+    }
+
+    > tabs > arrow {
+      color: $insensitive_fg_color;
+
+      &:hover { color: mix($fg_color, $insensitive_fg_color, 50%); }
+      &:active { color: $fg_color; }
+      &:disabled { color: transparentize($insensitive_fg_color,0.3); }
+    }
+
+    &.top > tabs > tab:hover:not(:checked) { box-shadow: inset 0 -1px $borders_color; }
+    &.bottom > tabs > tab:hover:not(:checked) { box-shadow: inset 0 1px $borders_color; }
+    &.left > tabs > tab:hover:not(:checked) { box-shadow: inset -1px 0 $borders_color; }
+    &.right > tabs > tab:hover:not(:checked) { box-shadow: inset 1px 0 $borders_color; }
+
+    > tabs > tab {
+      color: $insensitive_fg_color;
+      background-color: transparentize($base_color, 1);
+      font-weight: normal;
+
+      &:hover:not(:checked) {
+        color: mix($fg_color, $insensitive_fg_color, 50%);
+        background-color: transparentize($base_color, 0.5);
+        border-color: $borders_color;
+      }
+
+      &:checked {
+        color: $fg_color;
+        background-color: $base_color;
+        border-color: $borders_color;
+      }
+
+      // colors the button like the label, overridden otherwise
+      button.flat {
+        color: gtkalpha(currentColor, 0.3);
+        &:hover { color: currentColor; }
+
+        padding: 0;
+        // FIXME: generalize .small-button?
+        min-width: 16px;
+        min-height: 22px;
+
+        &:hover {
+          @extend %undecorated_button;
+          color: lighten(red, 15%);
+        }
+        &:active, &:active:hover {
+          @extend %undecorated_button;
+          color: $selected_bg_color;
+        }
+      }
+    }
+  }
+
+  > stack:not(:only-child) { // the :not(:only-child) is for "hidden" notebooks
+    background-color: $base_color;
+  }
+}
+
+/**************
+ * Scrollbars *
+ **************/
+$scrollbar_bg_color: darken($base_color, 1%);
+
+scrollbar {
+  $_slider_min_length: 40px;
+  $_slider_width: 6px;
+  $_fine-tune_slider_border: $_slider_width - 3; 
+
+  background-color: $scrollbar_bg_color;
+
+  // scrollbar border
+  &.top { border-bottom: 1px solid $borders_color; }
+  &.bottom { border-top: 1px solid $borders_color; }
+  &.left { border-right: 1px solid $borders_color; }
+  &.right { border-left: 1px solid $borders_color; }
+
+  > range > trough > slider {
+    min-width: $_slider_width;
+    min-height: $_slider_width;
+    margin: -1px;
+    border: 4px solid transparent;
+    border-radius: 8px;
+    background-clip: padding-box;
+    background-color: mix($fg_color, $bg_color, 40%);
+
+    &:hover { background-color: mix($fg_color, $bg_color, 30%); }
+
+    &:hover:active { background-color: $selected_bg_color; }
+
+    &:disabled { background-color: transparent; }
+  }
+
+  > range.fine-tune {
+    > trough > slider {
+      transition: none;
+      min-width: $_fine-tune_slider_border+1;
+      min-height: $_fine-tune_slider_border+1;
+    }
+
+    &.horizontal > trough > slider { border-width: $_fine-tune_slider_border 4px; }
+    &.vertical > trough > slider { border-width: 4px $_fine-tune_slider_border; }
+
+  }
+
+  &.overlay-indicator {
+    &:not(.dragging):not(.hovering) {
+      border-color: transparent;
+      opacity: 0.4;
+      background-color: transparent;
+
+      > range > trough > slider {
+        margin: 0;
+        min-width: 4px;
+        min-height: 4px;
+        background-color: mix($fg_color, $bg_color, 70%);
+        border: 1px solid if($variant != 'dark', transparentize(white, 0.4), transparentize(black, 0.7));
+      }
+
+      &.horizontal {
+        > range > trough > slider {
+          margin: 0 2px;
+          min-width: $_slider_min_length;
+        }
+      }
+
+      &.vertical {
+        > range > trough > slider {
+          margin: 2px 0;
+          min-height: $_slider_min_length;
+        }
+      }
+    }
+
+    &.dragging,
+    &.hovering { opacity: 0.99; }
+  }
+
+  &.horizontal > range > trough > slider { min-width: $_slider_min_length; }
+  &.vertical > range > trough > slider { min-height: $_slider_min_length; }
+}
+
+treeview ~ scrollbar.vertical {
+  border-top: 1px solid $borders_color;
+  margin-top: -1px;
+}
+
+/**********
+ * Switch *
+ **********/
+//FIXME port asset images to pure CSS (in GTK3 too)??
+switch {
+  font-size: 1px;
+
+  min-width: 52px;
+  min-height: 24px;
+
+  background-size: 52px 24px;
+  background-repeat: no-repeat;
+  background-position: center center;
+
+  @include focus-ring($outer: true);
+
+  > slider {
+    min-width: 1px;
+    min-height: 1px;
+  }
+
+  &, & > slider {
+    border: none;
+    box-shadow: none;
+  }
+
+  & > image {
+    outline-color: transparent;
+    color: transparent;
+  }
+}
+
+@each $k,$l in ('',''),
+               (':checked','-active'),
+               (':disabled','-insensitive'),
+               (':checked:disabled','-active-insensitive') {
+
+  // load switch troughs from .png files in assets directory
+
+  switch#{$k} {
+    background-image: -gtk-scaled(url("assets/switch#{$l}#{$asset_suffix}.png"),url("assets/switch#{$l}#{$asset_suffix}@2.png"));
+  }
+
+  modelbutton:hover switch#{$k},
+  row:selected switch#{$k},
+  infobar switch#{$k} {
+    background-image: -gtk-scaled(url("assets/switch#{$l}-selected.png"),url("assets/switch#{$l}-selected@2.png"));
+  }
+
+  headerbar switch#{$k} {
+    background-image: -gtk-scaled(url("assets/switch#{$l}-header#{$darker_asset_suffix}.png"),url("assets/switch#{$l}-header#{$darker_asset_suffix}@2.png"));
+  }
+}
+
+/*************************
+ * Check and Radio items *
+ *************************/
+// draw regular check and radio items using our PNG assets
+// all assets are rendered from assets.svg. never add pngs directly
+
+//selection-mode
+@each $check_state,$check_asset in ('','-selectionmode'),
+                  (':checked', '-checked-selectionmode') {
+  .view.content-view.check#{$check_state}:not(list),
+  .content-view .tile check#{$check_state}:not(list) {
+    -gtk-icon-shadow: none;
+    -gtk-icon-source: -gtk-scaled(url("assets/checkbox#{$check_asset}#{$asset_suffix}.png"),
+                                    url("assets/checkbox#{$check_asset}#{$asset_suffix}@2.png"));
+    background-color: transparent;
+  }
+}
+
+checkbutton {
+  border-spacing: 4px;
+
+  @include focus-ring();
+
+  &.text-button {
+    // this is for a nice focus on check and radios text
+    padding: 4px;
+  }
+}
+
+@each $w,$a in ('check', 'checkbox'),
+               ('radio','radio') {
+
+  //standard checks and radios
+  @each $s,$as in ('','-unchecked'),
+                  (':disabled','-unchecked-insensitive'),
+                  (':indeterminate', '-mixed'),
+                  (':indeterminate:disabled', '-mixed-insensitive'),
+                  (':checked', '-checked'),
+                  (':checked:disabled','-checked-insensitive') {
+    .#{$w}#{$s},
+    #{$w}#{$s},
+    treeview.view #{$w}#{$s} {
+      -gtk-icon-source: -gtk-scaled(url("assets/#{$a}#{$as}#{$asset_suffix}.png"),
+                                    url("assets/#{$a}#{$as}#{$asset_suffix}@2.png"));
+    }
+
+    .osd {
+      #{$w}#{$s} {
+        -gtk-icon-source: -gtk-scaled(url("assets/#{$a}#{$as}-dark.png"),
+                                      url("assets/#{$a}#{$as}-dark@2.png"));
+      }
+    }
+    // the borders of checks and radios are
+    // too similar in luminosity to the selected background color, hence
+    // we need special casing.
+    modelbutton #{$w}#{$s}:selected,
+    .view #{$w}#{$s}:selected,
+    treeview.#{$w}#{$s}:selected,
+    row:selected #{$w}#{$s},
+    infobar #{$w}#{$s} {
+      -gtk-icon-source: -gtk-scaled(url("assets/#{$a}#{$as}-selected.png"),
+                                    url("assets/#{$a}#{$as}-selected@2.png"));
+    }
+  }
+}
+
+/************
+ * GtkScale *
+ ************/
+%scale_trough {
+  border: none;
+  border-radius: 2.5px;
+  background-color: $scale_trough_bg;
+
+  &:disabled {
+   background-color: transparentize($scale_trough_bg, 0.45);
+  }
+
+  // ...on selected list-rows and infobars
+  modelbutton:hover &,
+  row:selected &,
+  infobar & {
+    background-color: transparentize(black, 0.8);
+
+    &:disabled {
+      background-color: transparentize(black, 0.9);
+    }
+  }
+
+  // OSD
+  .osd & {
+    background-color: if($variant == 'lighter', $osd_button_border, lighten($osd_bg_color, 7%));
+
+    &:disabled {  }
+  }
+}
+
+%scale_highlight {
+  border: none;
+  border-radius: 2.5px;
+  background-color: $selected_bg_color;
+
+  &:disabled {
+    background-color: transparentize($selected_bg_color, 0.45);
+  }
+
+  // ...on selected list-rows and infobars
+  modelbutton:hover &,
+  row:selected &,
+  infobar & {
+    background-color: $selected_fg_color;
+
+    &:disabled { background-color: mix($selected_fg_color, $selected_bg_color, 55%); }
+  }
+
+  // OSD
+  .osd & {
+    background-color: $selected_bg_color;
+
+    &:disabled {  }
+  }
+}
+
+scale {
+  // sizing
+  $_marks_length: 3px;
+  $_marks_distance: 1px;
+
+  min-height: 15px;
+  min-width: 15px;
+  padding: 3px;
+
+  @include focus-ring();
+
+  // the slider is inside the trough, so to have make it bigger there's a negative margin
+  > trough {
+    > slider {
+      min-height: 15px;
+      min-width: 15px;
+      margin: -6px;
+    }
+  }
+
+  // click-and-hold the slider to activate
+  &.fine-tune {
+    // to make the trough grow in fine-tune mode
+    > trough > slider { margin: -4px; }
+
+    > trough > fill,
+    > trough > highlight,
+    > trough {
+      border-radius: 5px;
+    }
+  }
+
+  // the backing bit
+  > trough {
+    @extend %scale_trough;
+  }
+
+  // the colored part of the backing bit
+  > trough > highlight { @extend %scale_highlight; }
+
+  // this is another differently styled part of the backing bit, the most relevant use case is for example
+  // in media player to indicate how much video stream as been cached
+  > trough > fill {
+    @extend %scale_trough;
+
+    background-color: transparentize($selected_bg_color, 0.5);
+
+    &:disabled {
+      background-color: transparent;
+    }
+  }
+
+  > trough > slider {
+    $_slider_border: if($variant!='dark', transparentize(darken($button_border,25%), 0.5), darken($button_border,2%));
+
+    background-color: $button_bg;
+    border-width: 1px;
+    border-style: solid;
+    border-color: $_slider_border;
+    border-radius: 100%;
+    transition: $button_transition;
+    transition-property: background, border;
+
+    &:hover { background-color: lighten($button_bg, 5%); }
+
+    &:active {
+      background-clip: border-box;
+      background-color: $selected_bg_color;
+      border-color: $selected_bg_color;
+    }
+
+    &:disabled {
+      background-color: mix($entry_bg, $bg_color, 55%);
+      border-color: transparentize($_slider_border, 0.2);
+    }
+
+    // ...on selected list rows
+    modelbutton:hover &,
+    row:selected &,
+    infobar & {
+      background-clip: border-box;
+      background-color: $selected_fg_color;
+      border-color: $selected_fg_color;
+
+      &:hover {
+        background-color: mix($selected_fg_color, $selected_bg_color, 85%);
+        border-color: mix($selected_fg_color, $selected_bg_color, 85%);
+      }
+      &:active {
+        background-color: mix($selected_fg_color, $selected_bg_color, 50%);
+        border-color: mix($selected_fg_color, $selected_bg_color, 50%);
+      }
+      &:disabled{
+        background-color: mix($selected_fg_color, $selected_bg_color, 55%);
+        border-color: mix($selected_fg_color, $selected_bg_color, 55%);
+      }
+    }
+
+    // OSD
+    .osd & {
+      background-clip: border-box;
+      background-color: $selected_bg_color;
+      border-color: $selected_bg_color;
+
+      &:hover {
+        background-color: lighten($selected_bg_color, 10%);
+        border-color: lighten($selected_bg_color, 10%)
+      }
+
+      &:active {
+        background-color: darken($selected_bg_color, 10%);
+        border-color: darken($selected_bg_color, 10%);
+      }
+
+      &:disabled {  }
+    }
+  }
+
+  > value {
+    color: gtkalpha(currentColor, 0.4);
+    font-feature-settings: "tnum";
+  }
+
+  &.horizontal {
+    > marks {
+      color: gtkalpha(currentColor, 0.4);
+      &.top {
+        margin-bottom: $_marks_distance;
+        margin-top: -($_marks_distance + $_marks_length);
+      }
+      &.bottom {
+        margin-top: $_marks_distance;
+        margin-bottom: -($_marks_distance + $_marks_length);
+      }
+
+      indicator {
+        background-color: currentColor;
+        min-height: $_marks_length;
+        min-width: 1px;
+      }
+    }
+
+    &.fine-tune > marks {
+      &.top {
+        margin-bottom: ($_marks_distance - 1px);
+        margin-top: -($_marks_distance + $_marks_length - 2px);
+      }
+      &.bottom {
+        margin-top: ($_marks_distance - 1px);
+        margin-bottom: -($_marks_distance + $_marks_length - 2px);
+      }
+
+      indicator { min-height: ($_marks_length - 1px); }
+    }
+  }
+
+  &.vertical {
+    > marks {
+      color: gtkalpha(currentColor, 0.4);
+      &.top {
+        margin-right: $_marks_distance;
+        margin-left: -($_marks_distance + $_marks_length);
+      }
+      &.bottom {
+        margin-left: $_marks_distance;
+        margin-right: -($_marks_distance + $_marks_length);
+      }
+
+      indicator {
+        background-color: currentColor;
+        min-height: 1px;
+        min-width: $_marks_length;
+      }
+    }
+
+    &.fine-tune > marks {
+      &.top {
+        margin-right: ($_marks_distance - 1px);
+        margin-left: -($_marks_distance + $_marks_length - 2px);
+      }
+      &.bottom {
+        margin-left: ($_marks_distance - 1px);
+        margin-right: -($_marks_distance + $_marks_length - 2px);
+      }
+
+      indicator { min-height: ($_marks_length - 1px); }
+    }
+  }
+
+  // Draw the drop-shaped slider for when scale has marks with CSS
+  // instead of image assets, by having one corner with zero radius
+  // and rotating it according to the scale position.
+  &.marks-before,
+  &.marks-after {
+    > trough > slider {
+      border-top-left-radius: 0;
+    }
+  }
+  &.horizontal.marks-before:not(.marks-after) > trough > slider {
+    transform: rotate(45deg);
+  }
+  &.horizontal.marks-after:not(.marks-before) > trough > slider {
+    transform: rotate(225deg);
+  }
+  &.vertical.marks-before:not(.marks-after) > trough > slider {
+    transform: rotate(315deg);
+  }
+  &.vertical.marks-after:not(.marks-before) > trough > slider {
+    transform: rotate(135deg);
+  }
+
+  &.color {
+    min-height: 0;
+    min-width: 0;
+
+    > trough {
+      background-image: image($scale_trough_bg);
+      background-repeat: no-repeat;
+      border: 1px solid $scale_trough_bg;
+      min-height: 13px;
+      min-width: 13px;
+    }
+
+    > trough > slider {
+      &:hover, &:backdrop, &:disabled, &:backdrop:disabled, & {
+        margin: -8px;
+      }
+    }
+
+    &.horizontal {
+      padding: 0 0 15px 0;
+
+      > trough {
+        padding-bottom: 4px;
+        background-position: 0 -3px;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+
+      > trough > slider {
+        &:dir(ltr), &:dir(rtl), & { // specificity bump
+          &:hover, &:backdrop, &:disabled, &:backdrop:disabled, & {
+            margin-bottom: -14px;
+            margin-top: 5px;
+          }
+        }
+      }
+    }
+
+    &.vertical {
+      &:dir(ltr), & {
+        padding: 0 0 0 15px;
+
+        > trough {
+          padding-left: 4px;
+          background-position: 3px 0;
+          border-bottom-right-radius: 0;
+          border-top-right-radius: 0;
+        }
+
+        > trough > slider {
+          &:hover, &:backdrop, &:disabled, &:backdrop:disabled, & {
+            margin-left: -13px;
+            margin-right: 4px;
+          }
+        }
+      }
+
+      &:dir(rtl) {
+        padding: 0 15px 0 0;
+
+        > trough {
+          padding-right: 4px;
+          background-position: -3px 0;
+          border-bottom-left-radius: 0;
+          border-top-left-radius: 0;
+        }
+
+        > trough > slider {
+          &:hover, &:backdrop, &:disabled, &:backdrop:disabled, & {
+            margin-right: -13px;
+            margin-left: 4px;
+          }
+        }
+      }
+    }
+
+    &.fine-tune {
+      &.horizontal {
+        &:dir(ltr), &:dir(rtl), & { // specificity bump
+          padding: 0 0 13px 0;
+
+          > trough {
+            padding-bottom: 6px;
+            background-position: 0 -5px;
+          }
+
+          > trough > slider {
+            margin-bottom: -14px;
+            margin-top: 5px;
+          }
+        }
+      }
+
+      &.vertical {
+        &:dir(ltr), & {
+          padding: 0 0 0 13px;
+
+          > trough {
+            padding-left: 6px;
+            background-position: 5px 0;
+          }
+
+          > trough > slider {
+            margin-left: -13px;
+            margin-right: 4px;
+          }
+        }
+
+        &:dir(rtl) {
+          padding: 0 13px 0 0;
+
+          > trough {
+            padding-right: 6px;
+            background-position: -5px 0;
+          }
+
+          > trough > slider {
+            margin-right: -13px;
+            margin-left: 4px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/*****************
+ * Progress bars *
+ *****************/
+progressbar {
+  // sizing
+  &.horizontal {
+    > trough {
+      min-width: 150px;
+      &, > progress { min-height: 6px; }
+    }
+  }
+
+  &.vertical {
+    > trough {
+      min-height: 80px;
+      &, > progress { min-width: 6px; }
+    }
+  }
+
+  // FIXME: insensitive state missing and some other state should be set probably
+  padding: 0;
+  font-size: smaller;
+  color: transparentize($fg_color, 0.3);
+  font-feature-settings: "tnum";
+
+  > trough {
+    @extend %scale_trough;
+
+    border-radius: 3px;
+  }
+
+  > trough > progress {
+    @extend %scale_highlight;
+
+    border-radius: 3px;
+  }
+
+  &.osd { // progressbar.osd used for epiphany page loading progress
+    min-width: 3px;
+    min-height: 3px;
+    background-color: transparent;
+
+    > trough {
+      border-style: none;
+      border-radius: 0;
+      background-color: transparent;
+      box-shadow: none;
+
+      > progress {
+        border-style: none;
+        border-radius: 0;
+      }
+    }
+  }
+
+  > trough.empty > progress { all: unset; } // makes the progress indicator disappear, when the fraction is 0
+}
+
+/*************
+ * Level Bar *
+ *************/
+levelbar {
+  &.horizontal {
+    trough > block {
+      min-height: 1px;
+    }
+
+    // segmented level bar
+    &.discrete {
+      trough > block {
+        margin: 0 1px;
+        min-width: 32px;
+      }
+    }
+  }
+
+  &.vertical {
+    trough > block {
+      min-width: 1px;
+    }
+
+    &.discrete > trough > block {
+      margin: 1px 0;
+      min-height: 32px;
+    }
+  }
+
+  > trough {
+    border: none;
+    padding: 3px;
+    border-radius: 3px;
+    background-color: if($variant != 'dark', $button_border, darken($bg_color, 5%));
+  }
+
+  // level bar colours
+  > trough > block {
+    &:not(.empty) {
+      border: 1px solid $selected_bg_color;
+      background-color: $selected_bg_color;
+      border-radius: 2px;
+    }
+    &.low {
+      border-color: $warning_color;
+      background-color: $warning_color;
+    }
+    &.high {
+      border-color: $selected_bg_color;
+      background-color: $selected_bg_color;
+    }
+    &.full {
+      border-color: $success_color;
+      background-color: $success_color;
+    }
+    &.empty {
+      background-color: if($variant!='dark', transparentize($fg_color,0.8), $base_color);
+      border-color: if($variant!='dark', transparentize($fg_color,0.8), $base_color);
+    }
+  }
+}
+
+
+/****************
+ * Print dialog *
+*****************/
+window.dialog.print {
+  drawing {
+    color: $fg_color;
+    background: none;
+    border: none;
+    padding: 0;
+
+    paper {
+      background: white;
+      color: #5c616c;
+      border: 1px solid $borders_color;
+    }
+
+  }
+
+  .dialog-action-box { margin: 12px; }
+}
+
+
+/**********
+ * Frames *
+ **********/
+frame,
+.frame {
+  border: 1px solid $borders_color;
+}
+
+frame {
+  border-radius: 0;
+
+  > label {
+    margin: 4px;
+  }
+}
+
+actionbar > revealer > box {
+  padding: 5px;
+  border-top: 1px solid $borders_color;
+  background-color: darken($bg_color, 3%);
+
+  &, > box.start, > box.end {
+    border-spacing: 6px;
+  }
+}
+
+scrolledwindow {
+  // This is used when content is touch-dragged past boundaries.
+  // draws a box on top of the content, the size changes programmatically.
+  > overshoot {
+    &.top {
+      @include overshoot(top);
+    }
+
+    &.bottom {
+      @include overshoot(bottom);
+    }
+
+    &.left {
+      @include overshoot(left);
+    }
+
+    &.right {
+      @include overshoot(right);
+    }
+  }
+
+  > junction { // the small square between two scrollbars
+    // Only color the top-left (or top right in RTL) pixel, to visually connect
+    // the borders of the two scrollbars.
+
+    background: $borders_color,
+                linear-gradient(to bottom, transparent 1px, $scrollbar_bg_color 1px),
+                linear-gradient(to right, transparent 1px, $scrollbar_bg_color 1px);
+
+    &:dir(rtl) {
+      background: $borders_color,
+                  linear-gradient(to bottom, transparent 1px, $scrollbar_bg_color 1px),
+                  linear-gradient(to left, transparent 1px, $scrollbar_bg_color 1px);
+    }
+  }
+}
+
+//vbox and hbox separators
+separator {
+  background: transparentize(black, 0.9);
+  min-width: 1px;
+  min-height: 1px;
+}
+
+
+/*********
+ * Lists *
+ *********/
+listview,
+list {
+  color: $text_color;
+  background-color: $base_color;
+  border-color: $borders_color;
+
+  > row { padding: 2px; }
+  > row.expander { padding: 0px; }
+  > row.expander .row-header { padding: 2px; }
+
+  &.horizontal row.separator,
+  &.separators.horizontal > row:not(.separator) {
+    border-left: 1px solid transparentize(black, 0.9);
+  }
+  &:not(.horizontal) row.separator,
+  &.separators:not(.horizontal) > row:not(.separator) {
+    border-bottom: 1px solid transparentize(black, 0.9);
+  }
+}
+
+row {
+  @include focus-ring();
+
+  &.activatable {
+    &.has-open-popup, // this is for indicathing which row generated a popover see https://bugzilla.gnome.org/show_bug.cgi?id=754411
+
+    &:hover { background-color: if($variant != 'dark', transparentize(black, 0.95), transparentize(white, 0.97)); }
+
+    &:active { color: $fg_color; }
+
+    &:selected {
+      &:active { color: $selected_fg_color; }
+
+      &.has-open-popup,
+      &:hover { background-color: mix(black, $selected_bg_color, 10%); }
+    }
+  }
+
+  &:selected {
+    @extend %selected_items;
+  }
+}
+
+columnview {
+  // move padding to child cells
+  > listview > row {
+    padding: 0;
+
+    // align horizontal sizing with header buttons
+    > cell {
+      padding: 8px 6px;
+
+      &:not(:first-child) {
+        border-left: 1px solid transparent;
+      }
+    }
+  }
+
+  // make column separators visible when :show-column-separators is true
+  &.column-separators > listview > row > cell {
+    border-left-color: transparentize(black, 0.9);
+  }
+
+  // shrink vertically for .data-table
+  &.data-table > listview > row > cell {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+}
+
+treeexpander {
+  border-spacing: 4px;
+}
+
+/********************************************************
+ * Data Tables                                          *
+ * treeview like tables with individual focusable cells *
+ * https://gitlab.gnome.org/GNOME/gtk/-/issues/2929     *
+ ********************************************************/
+
+//FIXME need new arc design
+//columnview row:not(:selected) cell editablelabel:not(.editing):focus-within {
+//  outline: 2px solid $focus_border_color;
+//}
+
+columnview row:not(:selected) cell editablelabel.editing:focus-within {
+  outline: 2px solid $selected_bg_color;
+}
+
+columnview row:not(:selected) cell editablelabel.editing text selection {
+  color: $selected_fg_color;
+  background-color: $selected_bg_color;
+}
+
+/*******************************************************
+ * Rich Lists                                          *
+ * Large list usually containing lots of widgets       *
+ * https://gitlab.gnome.org/GNOME/gtk/-/issues/3073    *
+ *******************************************************/
+
+
+.rich-list { /* rich lists usually containing other widgets than just labels/text */
+  & > row {
+    padding: 8px 12px;
+    min-height: 32px; /* should be tall even when only containing a label */
+
+    & > box {
+      border-spacing: 12px;
+    }
+  }
+}
+
+/*********************
+ * App Notifications *
+ *********************/
+.app-notification {
+  padding: 10px;
+  color: $dark_sidebar_fg;
+  background-color: $dark_sidebar_bg;
+  background-clip: border-box;
+  border-radius: 0 0 2px 2px;
+  border-width: 0 1px 1px 1px;
+  border-style: solid;
+  border-color: darken($dark_sidebar_bg, 10%);
+
+  border { border: none; }
+
+  button {
+    @include button(osd);
+    &.flat {
+      @extend %undecorated_button;
+      border-color: transparentize($selected_bg_color, 1);
+      &:disabled { @extend %undecorated_button; }
+    }
+    &:hover { @include button(osd-hover); }
+    &:active, &:checked { @include button(osd-active); background-clip: padding-box; }
+    &:disabled { @include button(osd-insensitive);
+    }
+  }
+}
+
+
+/*************
+ * Expanders *
+ *************/
+expander {
+  min-width: 16px;
+  min-height: 16px;
+  -gtk-icon-source: -gtk-icontheme('pan-end-symbolic');
+  &:dir(rtl) { -gtk-icon-source: -gtk-icontheme('pan-end-symbolic-rtl'); }
+
+  &:disabled { color: $insensitive_fg_color; }
+
+  &:checked { -gtk-icon-source: -gtk-icontheme('pan-down-symbolic'); }
+}
+
+expander-widget {
+  @include focus-ring("> box > title");
+
+  > box > title {
+    border-radius: 3px;
+
+    &:hover > expander {
+      color: lighten($fg_color,30%); //only lightens the icon
+    }
+  }
+}
+
+.navigation-sidebar,
+placessidebar,
+stackswitcher,
+expander-widget {
+  &:not(decoration):not(window):drop(active):focus,
+  &:not(decoration):not(window):drop(active) {
+    box-shadow: none;
+  }
+}
+
+
+/************
+ * Calendar *
+ ***********/
+calendar {
+  color: $fg_color;
+  border: 1px solid $borders_color;
+  border-radius: 3px;
+  padding: 2px;
+  font-feature-settings: "tnum";
+
+  > header {
+    color: $fg_color;
+    border: none;
+
+    > button {
+      &, &:hover, &:active, &:disabled {
+        @extend %undecorated_button;
+      }
+
+      color: transparentize($fg_color,0.55);
+
+      &:hover { color: $fg_color; }
+      &:active { color: $selected_bg_color; }
+      &:disabled { color: $insensitive_fg_color; }
+    }
+  }
+
+  > grid {
+    > label.day-name {
+    }
+
+    > label.week-number {
+    }
+
+    > label.today {
+      &, &:selected, &:focus {
+        @extend %selected_items;
+      }
+    }
+
+    > label:focus {
+      background-color: transparentize(black, 0.9);
+    }
+
+    > label.day-number {
+      padding: 4px;
+      border-radius: 3px;
+      &:selected{
+        background-color: transparentize(black, 0.85);
+      }
+    }
+
+    > label.day-number.other-month {
+      color: gtkalpha(currentColor, 0.3);
+    }
+  }
+
+}
+
+
+/***********
+ * Dialogs *
+ ***********/
+window.dialog.message { // Message Dialog styling
+  .titlebar {
+    min-height: 20px;
+    background-image: none;
+    background-color: $header_bg;
+    border-bottom: 1px solid darken($header_bg, 7%);
+    border-top-left-radius: $header_radius;
+    border-top-right-radius: $header_radius;
+  }
+
+  .dialog-action-area button { padding: 8px; min-height: 0; }
+
+  box.dialog-vbox.vertical {
+    padding-top: 10px;
+    border-spacing: 10px;
+  }
+
+  & label.title {
+    font-weight: 800;
+    font-size: 15pt;
+  }
+
+  &.csd { // rounded bottom border styling for csd version
+    &.background {
+      border-bottom-left-radius: 3px;
+      border-bottom-right-radius: 3px;
+      border: none;
+    }
+
+    .dialog-action-area { @include linking_rules(); }
+
+    .dialog-action-area button {
+      border-radius: 0;
+      border-bottom-style: none;
+      border-right-style: none;
+
+      &:first-child{
+        border-bottom-left-radius: 2px;
+        border-left-style: none;
+      }
+
+      &:last-child {
+        border-bottom-right-radius: 2px;
+      }
+    }
+  }
+}
+
+filechooser {
+  .dialog-action-box {
+    border-top: 1px solid $borders_color;
+  }
+
+  #pathbarbox { border-bottom: 1px solid transparentize($borders_color, 0.5); }
+}
+
+
+filechooserbutton>button>box {
+  border-spacing: 6px;
+}
+filechooserbutton:drop(active) {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+
+/***********
+ * Sidebar *
+ ***********/
+.sidebar {
+  border-style: none;
+  background-color: lighten($bg_color, 2%);
+
+  &:not(separator) {
+    @at-root %sidebar_left,
+    &:dir(ltr),
+    &.left,
+    &.left:dir(rtl) {
+      border-right: 1px solid $borders_color;
+      border-left-style: none;
+    }
+
+    @at-root %sidebar_right,
+    &:dir(rtl),
+    &.right {
+      border-left: 1px solid $borders_color;
+      border-right-style: none;
+    }
+  }
+
+  listview.view,
+  list { background-color: transparent; }
+
+  paned & { &.left, &.right, &.left:dir(rtl), &:dir(rtl), &:dir(ltr), & { border-style: none; }}
+}
+
+stacksidebar {
+  //not a regular list
+  list.separators:not(.horizontal) > row:not(.separator) {
+    border-bottom: none;
+  }
+  row {
+    padding: 10px 4px;
+    @include focus-ring();
+
+    > label {
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    &.needs-attention > label {
+      @extend %needs_attention;
+       background-size: 6px 6px, 0 0;
+    }
+    &:hover {
+      background-color: if($variant != 'dark', transparentize(black, 0.95), transparentize(white, 0.97));
+    }
+    &:selected {
+      background-color: $selected_bg_color;
+      border-radius: 0;
+      color: $selected_fg_color;
+    }
+    &:selected:hover:dir(ltr), &:selected:hover:dir(rtl) {
+      background-color: mix(black, $selected_bg_color, 10%);
+    }
+  }
+}
+
+separator.sidebar {
+  background-color: $borders_color;
+
+  .titlebar & {
+    background-color: $header_border;
+    margin: 0;
+  }
+}
+
+
+/**********************
+ * Navigation Sidebar *
+ **********************/
+
+.navigation-sidebar {
+  padding: 0;
+
+  > separator {
+    margin: 0;
+  }
+
+  > row {
+    min-height: 36px;
+    padding: 0 8px;
+    border-radius: 0;
+    margin: 0 0 2px;
+
+    @include focus-ring($focus-state: 'focus-visible:focus-within');
+    &:hover {
+      background-color: if($variant != 'dark', transparentize(black, 0.95), transparentize(white, 0.97));
+    }
+
+    &:selected {
+      background-color: $selected_bg_color;
+      color: $selected_fg_color;
+
+      &:hover {
+        background-color: mix(black, $selected_bg_color, 10%);
+      }
+    }
+
+    &:disabled { color: $insensitive_fg_color; }
+  }
+}
+
+
+/****************
+ * File chooser *
+ ****************/
+
+$_placesidebar_icons_opacity: 0.7;
+
+row image.sidebar-icon { opacity: $_placesidebar_icons_opacity; } // dim the sidebar icons
+                                                                  // see bug #786613 for details
+                                                                  // on this oddity
+
+/* this should be more generic, only using .navigation-sidebar
+   https://gitlab.gnome.org/GNOME/gtk/-/issues/2929
+*/
+
+placessidebar {
+  .navigation-sidebar > row {
+    // Needs overriding of the `.navigation-sidebar > row` padding
+    padding: 0;
+
+    // Using margins/padding directly in the SidebarRow
+    // will make the animation of the new bookmark row jump
+    > revealer { padding: 0 10px; }
+
+    image.sidebar-icon {
+      &:dir(ltr) { padding-right: 8px; }
+      &:dir(rtl) { padding-left: 8px; }
+    }
+
+    label.sidebar-label {
+      &:dir(ltr) { padding-right: 2px; }
+      &:dir(rtl) { padding-left: 2px; }
+    }
+
+    @at-root button.sidebar-button {
+      @extend %button_basic_flat;
+      min-height: 22px;
+      min-width: 22px;
+      margin-top: 2px;
+      margin-bottom: 2px;
+      padding: 0;
+      border-radius: 100%;
+    }
+
+    &.sidebar-placeholder-row {
+      padding: 0 8px;
+      min-height: 2px;
+      background-image: image($drop_target_color);
+      background-clip: content-box;
+    }
+
+    &.sidebar-new-bookmark-row { color: $selected_bg_color; }
+
+    &:drop(active):not(:disabled) {
+      color: $drop_target_color;
+      box-shadow: inset 0 1px $drop_target_color,
+                  inset 0 -1px $drop_target_color;
+
+      &:selected {
+        color: $selected_fg_color;
+        background-color: $drop_target_color;
+      }
+    }
+  }
+}
+
+placesview {
+  .server-list-button > image {
+    transition: 200ms $ease-out-quad;
+    -gtk-icon-transform: rotate(0turn);
+  }
+
+  .server-list-button:checked > image {
+    transition: 200ms $ease-out-quad;
+    -gtk-icon-transform: rotate(-0.5turn);
+  }
+
+  row.activatable:hover {  }
+
+  > actionbar > revealer > box  > box{
+    border-spacing: 6px;
+  }
+}
+
+
+/*********
+ * Paned *
+ *********/
+paned {
+  > separator {
+    min-width: 1px;
+    min-height: 1px;
+    -gtk-icon-source: none; // defeats the ugly default handle decoration
+    border-style: none; // just to be sure
+    background-color: transparent;
+    // workaround, using background instead of a border since the border will get rendered twice (?)
+    background-image: image($borders_color);
+    background-size: 1px 1px;
+
+    &:selected { background-image: image($selected_bg_color); } // FIXME is this needed?
+
+    &.wide {
+      min-width: 5px;
+      min-height: 5px;
+      background-color: $bg_color;
+      background-image: image($borders_color), image($borders_color);
+      background-size: 1px 1px, 1px 1px;
+    }
+  }
+
+  &.horizontal > separator {
+    background-repeat: repeat-y;
+
+    &:dir(ltr) {
+      margin: 0 -8px 0 0;
+      padding: 0 8px 0 0;
+      background-position: left;
+    }
+    &:dir(rtl) {
+      margin: 0 0 0 -8px;
+      padding: 0 0 0 8px;
+      background-position: right;
+    }
+
+    &.wide {
+      margin: 0;
+      padding: 0;
+      background-repeat: repeat-y, repeat-y;
+      background-position: left, right;
+    }
+  }
+
+  &.vertical > separator {
+    margin: 0 0 -8px 0;
+    padding: 0 0 8px 0;
+    background-repeat: repeat-x;
+    background-position: top;
+
+    &.wide {
+      margin: 0;
+      padding: 0;
+      background-repeat: repeat-x, repeat-x;
+      background-position: bottom, top;
+    }
+  }
+}
+
+
+/**************
+ * GtkVideo *
+ **************/
+
+video {
+  & image.osd {
+    min-width: 64px;
+    min-height: 64px;
+    border-radius: 32px;
+  }
+  background: black;
+}
+
+/************
+ * Tooltips *
+ ************/
+tooltip {
+  &.background {
+    // background-color needs to be set this way otherwise it gets drawn twice
+    // see https://bugzilla.gnome.org/show_bug.cgi?id=736155 for details.
+    background-color: lighten($osd_bg_color, 10%);
+    background-clip: padding-box;
+  }
+
+  &.background, & {
+    color: $osd_fg_color;
+  }
+
+  padding: 4px;
+  border-radius: 2px;
+
+  > box {
+    border-spacing: 6px;
+  }
+}
+
+
+/*****************
+ * Color Chooser *
+ *****************/
+colorswatch {
+  // This widget is made of two boxes one on top of the other, the lower box is colorswatch {} the other one
+  // is colorswatch overlay {}, colorswatch has the programmatically set background, so most of the style is
+  // applied to the overlay box.
+
+  @include focus-ring();
+
+  &:drop(active), & { border-style: none; } // FIXME: implement a proper drop(active) state
+
+  $_colorswatch_radius: 2px;
+
+  // base color corners rounding
+  // to avoid the artifacts caused by rounded corner anti-aliasing the base color
+  // sports a bigger radius.
+  // nth-child is needed by the custom color strip.
+
+  &.top {
+    border-top-left-radius: $_colorswatch_radius + 0.5px;
+    border-top-right-radius: $_colorswatch_radius + 0.5px;
+
+    > overlay {
+      border-top-left-radius: $_colorswatch_radius;
+      border-top-right-radius: $_colorswatch_radius;
+    }
+  }
+
+  &.bottom {
+    border-bottom-left-radius: $_colorswatch_radius + 0.5px;
+    border-bottom-right-radius: $_colorswatch_radius + 0.5px;
+
+    > overlay {
+      border-bottom-left-radius: $_colorswatch_radius;
+      border-bottom-right-radius: $_colorswatch_radius;
+    }
+  }
+
+  &.left,
+  &:first-child:not(.top) {
+    border-top-left-radius: $_colorswatch_radius + 0.5px;
+    border-bottom-left-radius: $_colorswatch_radius + 0.5px;
+
+    > overlay {
+      border-top-left-radius: $_colorswatch_radius;
+      border-bottom-left-radius: $_colorswatch_radius;
+    }
+  }
+
+  &.right,
+  &:last-child:not(.bottom) {
+    border-top-right-radius: $_colorswatch_radius + 0.5px;
+    border-bottom-right-radius: $_colorswatch_radius + 0.5px;
+
+    > overlay {
+      border-top-right-radius: $_colorswatch_radius;
+      border-bottom-right-radius: $_colorswatch_radius;
+    }
+  }
+
+  &.dark {
+    outline-color: transparentize(white, 0.6);
+
+    > overlay {
+      color: transparentize(white, 0.3);
+    }
+
+    &.activatable:hover > overlay {
+      border-color: if($variant != 'dark', transparentize(black, 0.5), $borders_color);
+    }
+  }
+
+  &.light {
+    outline-color: transparentize(black, 0.6);
+
+    > overlay {
+      color: transparentize(black, 0.3);
+    }
+
+    &.activatable:hover > overlay {
+      border-color: if($variant != 'dark', transparentize(black, 0.7), $borders_color);
+    }
+  }
+
+  &:drop(active) {
+    box-shadow: none;
+
+    &.light > overlay {
+      border-color: $drop_target_color;
+    }
+
+    &.dark > overlay {
+      border-color: $drop_target_color;
+    }
+  }
+
+  > overlay {
+    border: 1px solid if($variant != 'dark', transparentize(black, 0.85), $borders_color);
+  }
+
+  &.activatable:hover > overlay {
+    background-color: transparentize(white, 0.8);
+  }
+
+  &#add-color-button {
+    border-radius: $_colorswatch_radius 0 0 $_colorswatch_radius;
+
+    &:only-child { border-radius: $_colorswatch_radius; }
+
+    > overlay {
+      @include button(normal);
+    }
+
+    &.activatable:hover > overlay {
+      @include button(hover);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+
+    > overlay {
+      border-color: transparentize(black, 0.5);
+      box-shadow: none;
+    }
+  }
+
+  row:selected & { box-shadow: 0 0 0 2px $selected_fg_color; }
+
+  &#editor-color-sample {
+    border-radius: 3px;
+
+    > overlay { border-radius: 3px; }
+  }
+}
+
+plane {
+  @include focus-ring();
+}
+
+// colorscale popup
+colorchooser .popover.osd { border-radius: 3px; }
+
+/********
+ * Misc *
+ ********/
+.content-view {
+  background-color: $base_color;
+
+  &:hover { -gtk-icon-filter: brightness(1.2); }
+
+  .tile {
+    margin: 2px;
+    background-color: if($variant!='dark', transparent, black);
+    border-radius: 0;
+    padding: 0;
+
+    &:active, &:selected { background-color: if($variant!='dark', transparent, $selected_bg_color); }
+    &:disabled { background-color: if($variant!='dark', transparent, $insensitive_bg_color); }
+}
+
+  > rubberband { @extend rubberband; }
+
+}
+
+.scale-popup {
+  .osd & { @extend %osd; }
+
+  .osd & button.flat {  //FIXME: quick hack, redo properly
+    border-style: none;
+    border-radius: 3px;
+  }
+
+  button { // +/- buttons on GtkVolumeButton popup
+    &:hover {
+      @include button(hover);
+    }
+  }
+}
+
+
+/**********************
+ * Window Decorations *
+ *********************/
+
+// this needs to be transparent, see bug #722563
+$_wm_border: if($variant!='dark', transparentize(black, 0.9), transparentize(black, 0.45));
+
+window {
+  // lamefun trick to get rounded borders regardless of CSD use
+  border-width: 0px;
+
+  &.csd {
+    box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', darken($header_bg, 7%), $_wm_border),
+                0 8px 8px 0 if($variant !='dark', opacify($_wm_border, 0.1), transparentize($_wm_border, 0.2));
+    margin: 0px;
+    border-radius: $header_radius $header_radius 0 0;
+    &:backdrop {
+      // the transparent shadow here is to enforce that the shadow extents don't
+      // change when we go to backdrop, to prevent jumping windows.
+      // The biggest shadow should be in the same order then in the active state
+      // or the jumping will happen during the transition.
+      box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', transparentize(darken($header_bg, 7%), 0.1), $_wm_border),
+                  0 8px 8px 0 transparent,
+                  0 5px 5px 0 if($variant !='dark', opacify($_wm_border, 0.1), transparentize($_wm_border, 0.2));
+      transition: $backdrop_transition;
+    }
+
+    &.popup {
+      border-radius: 2px;
+      box-shadow: 0 3px 6px if($variant != 'dark', $_wm_border, transparentize($_wm_border, 0.1)),
+                  0 0 0 1px if($variant != 'dark', $_wm_border, darken($bg_color, 10%));
+    }
+
+    &.dialog.message {
+      border-radius: $header_radius $header_radius 2px 2px;
+    }
+  }
+
+  &.solid-csd {
+    margin: 1px;
+    padding: 0;
+    border: 1px solid $borders_color;
+    border-radius: 0;
+    background-color: $header_bg;
+    box-shadow: none;
+  }
+
+  &.maximized,
+  &.fullscreen { border-radius: 0; box-shadow: none; }
+
+  &.tiled,
+  &.tiled-top,
+  &.tiled-left,
+  &.tiled-right,
+  &.tiled-bottom {
+    border-radius: 0;
+    box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', darken($header_bg, 7%), $_wm_border),
+                0 0 0 20px transparent; //transparent control workaround -- GTK issue #3670
+
+    &:backdrop {
+      box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', darken($header_bg, 7%), $_wm_border),
+                  0 0 0 20px transparent; // GTK issue #3670
+    }
+  }
+
+  &.popup { border-radius: 0; box-shadow: none; }
+
+  // server-side decorations as used by mutter
+  &.ssd { //just doing borders, wm draws actual shadows
+    border-radius: $header_radius $header_radius 0 0;
+    box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', transparentize(black, 0.35), $_wm_border);
+
+    &.maximized { border-radius: 0; }
+  }
+
+}
+
+tooltip.csd {
+  border-radius: 2px;
+  box-shadow: 0 1px 3px 1px if($variant != 'dark', $_wm_border, transparentize($_wm_border, 0.3));
+}
+
+// catch all extend :)
+
+%selected_items {
+  background-color: $selected_bg_color;
+
+  @at-root %nobg_selected_items, & {
+    color: $selected_fg_color;
+
+    @at-root %selected_items_disabled,
+    &:disabled { color: mix($selected_fg_color, $selected_bg_color, 50%); }
+
+  }
+}
+
+.monospace { font-family: monospace; }
+
+
+/**********************
+ * Touch Copy & Paste *
+ *********************/
+//FIXME Needs Arc design
+//touch selection handlebars for the Popover.osd above
+cursor-handle {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-style: none;
+  min-width: 20px;
+  min-height: 24px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+
+  @each $s,$as in ('',''),
+                  (':hover','-hover'),
+                  (':active','-active') { //no need for insensitive and backdrop
+    &.top#{$s}:dir(ltr), &.bottom#{$s}:dir(rtl) {
+      $_url: 'assets/text-select-start#{$as}#{$asset_suffix}';
+      -gtk-icon-source: -gtk-scaled(url('#{$_url}.png'),
+                                    url('#{$_url}@2.png'));
+    }
+
+    &.bottom#{$s}:dir(ltr), &.top#{$s}:dir(rtl) {
+      $_url: 'assets/text-select-end#{$as}#{$asset_suffix}';
+      -gtk-icon-source: -gtk-scaled(url('#{$_url}.png'),
+                                    url('#{$_url}@2.png'));
+    }
+
+    &.insertion-cursor#{$s}:dir(ltr), &.insertion-cursor#{$s}:dir(rtl) {
+      $_url: 'assets/slider-horz-scale-has-marks-above#{$as}#{$asset_suffix}';
+      -gtk-icon-source: -gtk-scaled(url('#{$_url}.png'),
+                                    url('#{$_url}@2.png'));
+    }
+  }
+}
+
+shortcuts-section {
+  margin: 20px;
+}
+
+.shortcuts-search-results {
+  margin: 20px;
+  border-spacing: 24px;
+}
+
+// shortcut window keys
+shortcut {
+  border-spacing: 6px;
+}
+
+shortcut > .keycap {
+  min-width: 20px;
+  min-height: 25px;
+  margin-top: 2px;
+  padding-bottom: 3px;
+  padding-left: 6px;
+  padding-right: 6px;
+
+  color: $fg_color;
+  background-color: $base_color;
+  border: 1px solid;
+  border-color: if($variant == 'light', mix($borders_color, $bg_color, 50%), $borders_color);
+  border-radius: 5px;
+  box-shadow: if($variant == 'light', inset 0 -3px mix($base_color, $bg_color, 20%), inset 0 -3px mix($borders_color, $base_color, 60%));
+  font-size: smaller;
+
+}
+
+:not(decoration):not(window):drop(active):focus,
+:not(decoration):not(window):drop(active) { // FIXME needs to be done widget by widget, this wildcard should really die
+  border-color: $drop_target_color;
+  box-shadow: inset 0 0 0 1px $drop_target_color;
+  caret-color: $drop_target_color;
+}
+
+stackswitcher > button.text-button { min-width: 80px; } // FIXME aggregate with buttons
+
+stackswitcher.circular {
+  border-spacing: 12px;
+
+  // FIXME aggregate with buttons
+  > button.circular,
+  > button.text-button.circular {
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+  }
+}
+/*************
+ * App Icons *
+ *************/
+/* Outline for low res icons */
+.lowres-icon {
+  -gtk-icon-shadow: none;
+}
+
+/* Drapshadow for large icons */
+.icon-dropshadow {
+  -gtk-icon-shadow: none;
+}
+
+/*********
+ * Emoji *
+ ********/
+
+popover.emoji-picker > contents {
+  padding: 0;
+}
+
+.emoji-searchbar {
+  padding: 5px;
+  border-spacing: 6px;
+  border-bottom: 1px solid $borders_color;
+}
+
+.emoji-toolbar {
+  padding: 5px;
+  border-spacing: 6px;
+  border-top: 1px solid $borders_color;
+}
+
+button.emoji-section {
+  &:active, &:checked { border-color: transparent; }
+}
+
+popover.emoji-picker emoji {
+  font-size: x-large;
+  padding: 5px;
+  border-radius: 2px;
+
+  &:focus,
+  &:hover {
+    background: $selected_bg_color;
+  }
+}
+
+emoji-completion-row > box {
+  border-spacing: 8px;
+  padding: 2px 8px;
+}
+
+emoji-completion-row:focus,
+emoji-completion-row:hover {
+  background-color: $selected_bg_color;
+  color: $selected_fg_color;
+}
+
+emoji-completion-row emoji:focus,
+emoji-completion-row emoji:hover {
+  background-color: $selected_bg_color;
+  color: $selected_fg_color;
+}
+
+popover.entry-completion > contents {
+  padding: 0;
+}
+
+statusbar {
+  padding: 5px 8px 5px 8px;
+}
+
+menubutton {
+  > button > box {
+    border-spacing: 6px;
+  }
+
+  arrow {
+    min-height: 16px;
+    min-width: 16px;
+    &.none {
+      -gtk-icon-source: -gtk-icontheme('open-menu-symbolic');
+    }
+    &.down {
+      -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
+    }
+    &.up {
+      -gtk-icon-source: -gtk-icontheme('pan-up-symbolic');
+    }
+    &.left {
+      -gtk-icon-source: -gtk-icontheme('pan-start-symbolic');
+    }
+    &.right {
+      -gtk-icon-source: -gtk-icontheme('pan-end-symbolic');
+    }
+  }
+}
+
