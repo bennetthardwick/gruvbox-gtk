@@ -6,6 +6,6 @@ Encoding=UTF-8
 
 [X-GNOME-Metatheme]
 GtkTheme=Gruvbox
-IconTheme=Adwaita
+IconTheme=Arc-Gruvbox
 CursorTheme=DMZ-Black
 ButtonLayout=menu:minimize,maximize,close
