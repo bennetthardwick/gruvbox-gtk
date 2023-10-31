@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Gruvbox
+Comment=A flat theme with transparent elements
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Gruvbox
+IconTheme=Gruvbox
+CursorTheme=DMZ-Black
+ButtonLayout=menu:minimize,maximize,close
